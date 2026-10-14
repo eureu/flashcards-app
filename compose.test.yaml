@@ -1,0 +1,35 @@
+name: language-cards-test
+
+services:
+  db-test:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: language_cards_test
+      POSTGRES_USER: language_cards
+      POSTGRES_PASSWORD: language_cards
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U language_cards -d language_cards_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  api-test:
+    build:
+      context: ./backend
+      target: test
+    environment:
+      APP_ENV: test
+      APP_SECRET: test-session-secret-with-at-least-32-characters
+      BOT_TOKEN: 123456:test-bot-token
+      DATABASE_URL: postgresql+psycopg://language_cards:language_cards@db-test:5432/language_cards_test
+    depends_on:
+      db-test:
+        condition: service_healthy
+
+  web-test:
+    build:
+      context: ./frontend
+      target: test
+
