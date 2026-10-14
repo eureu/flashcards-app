@@ -18,7 +18,7 @@ def test_preview_preserves_invalid_row_and_marks_duplicates(client, auth_headers
     assert rows[0]["duplicate"] is True
     assert rows[0]["selected"] is False
     assert rows[1]["original"].startswith("Выражение it depends")
-    assert rows[1]["error"] is not None
+    assert rows[1]["error"] == "Не найден разделитель « - »"
     assert response.json()["confirmation_token"] is None
 
 

@@ -66,3 +66,18 @@ it("drops a stale active-group preference", async () => {
   await screen.findByRole("heading", { name: "Friends" });
   expect(localStorage.getItem("active-group-id")).toBeNull();
 });
+
+it("opens shared import for the selected publisher group", async () => {
+  const publisherGroup = { ...ownerGroup, can_add_shared: true };
+  const onSelect = vi.fn();
+  const onAddShared = vi.fn();
+  api.listGroups.mockResolvedValue([publisherGroup]);
+
+  render(<GroupPage onSelect={onSelect} onAddShared={onAddShared} />);
+
+  fireEvent.click(await screen.findByRole("button", { name: "Добавить общие слова" }));
+
+  expect(localStorage.getItem("active-group-id")).toBe(publisherGroup.id);
+  expect(onSelect).toHaveBeenCalledWith(publisherGroup);
+  expect(onAddShared).toHaveBeenCalledOnce();
+});

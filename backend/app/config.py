@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     app_secret: str = Field(min_length=32)
     bot_token: str = Field(min_length=1)
     database_url: str
+    static_dir: str | None = None
 
 
 def load_settings() -> Settings:

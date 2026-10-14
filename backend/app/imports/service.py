@@ -17,7 +17,7 @@ from app.cards.policy import require_create_access
 from app.cards.schemas import CardTarget, GroupTarget
 from app.errors import DomainError
 from app.groups.models import Group
-from app.imports.parser import MAX_ROWS, MAX_SIDE_LENGTH, fingerprint, parse_list
+from app.imports.parser import MAX_ROWS, MAX_SIDE_LENGTH, SEPARATOR, fingerprint, parse_list
 from app.imports.schemas import CommitResult, ImportPreview, ImportRow
 from app.operations.service import get_operation_result, save_operation_result
 
@@ -76,7 +76,11 @@ def _normalize_rows(rows: list[ImportRow], existing: set[str]) -> list[ImportRow
         row.back = row.back.strip() if row.back is not None else None
         row.error = None
         if not row.front or not row.back:
-            row.error = "Обе стороны карточки должны быть заполнены"
+            row.error = (
+                "Не найден разделитель « - »"
+                if SEPARATOR.search(row.original) is None
+                else "Обе стороны карточки должны быть заполнены"
+            )
         elif len(row.front) > MAX_SIDE_LENGTH or len(row.back) > MAX_SIDE_LENGTH:
             row.error = "Каждая сторона должна быть не длиннее 2000 символов"
         row.duplicate = False

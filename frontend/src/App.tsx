@@ -69,7 +69,12 @@ export function App() {
           canAddShared={activeGroup?.can_add_shared ?? false}
         />
       )}
-      {section === "groups" && <GroupPage onSelect={setActiveGroup} />}
+      {section === "groups" && (
+        <GroupPage
+          onSelect={setActiveGroup}
+          onAddShared={() => setSection("words")}
+        />
+      )}
       <Tabs active={section} onChange={setSection} />
     </main>
   );

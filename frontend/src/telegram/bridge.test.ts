@@ -12,6 +12,15 @@ it("falls back when Telegram text contrast is insufficient", () => {
   expect(document.documentElement.style.getPropertyValue("--color-text")).toBe("#18222D");
 });
 
+it("uses accessible semantic rating colors for Telegram dark theme", () => {
+  applyTelegramTheme({ colorScheme: "dark" });
+
+  expect(document.documentElement.style.getPropertyValue("--color-again")).toBe("#FF9C95");
+  expect(document.documentElement.style.getPropertyValue("--color-hard")).toBe("#F4C275");
+  expect(document.documentElement.style.getPropertyValue("--color-good")).toBe("#9DC5FF");
+  expect(document.documentElement.style.getPropertyValue("--color-easy")).toBe("#8FE1B2");
+});
+
 it("unsubscribes layout listeners", () => {
   const onEvent = vi.fn();
   const offEvent = vi.fn();

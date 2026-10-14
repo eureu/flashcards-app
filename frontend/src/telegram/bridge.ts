@@ -46,8 +46,8 @@ export function requireTelegramInitData(): string {
 }
 
 const FALLBACK = {
-  light: { background: "#F6F7F9", surface: "#FFFFFF", text: "#18222D", muted: "#53616F", accent: "#2A6EC7", accentText: "#FFFFFF" },
-  dark: { background: "#17212B", surface: "#202B36", text: "#F3F6FA", muted: "#ADB9C5", accent: "#6AB2F2", accentText: "#17212B" },
+  light: { background: "#F6F7F9", surface: "#FFFFFF", text: "#18222D", muted: "#53616F", accent: "#2A6EC7", accentText: "#FFFFFF", again: "#B42318", hard: "#8A4B00", good: "#1D4ED8", easy: "#166534" },
+  dark: { background: "#17212B", surface: "#202B36", text: "#F3F6FA", muted: "#ADB9C5", accent: "#6AB2F2", accentText: "#17212B", again: "#FF9C95", hard: "#F4C275", good: "#9DC5FF", easy: "#8FE1B2" },
 };
 
 function rgb(hex: string): [number, number, number] | null {
@@ -87,6 +87,10 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
   root.setProperty("--color-muted", params.hint_color && sufficient(params.hint_color, background) ? params.hint_color : fallback.muted);
   root.setProperty("--color-accent", params.button_color ?? fallback.accent);
   root.setProperty("--color-accent-text", params.button_text_color && sufficient(params.button_text_color, params.button_color ?? fallback.accent) ? params.button_text_color : fallback.accentText);
+  root.setProperty("--color-again", fallback.again);
+  root.setProperty("--color-hard", fallback.hard);
+  root.setProperty("--color-good", fallback.good);
+  root.setProperty("--color-easy", fallback.easy);
   root.setProperty("--safe-top", `${theme.safeAreaInset?.top ?? 0}px`);
   root.setProperty("--safe-right", `${theme.safeAreaInset?.right ?? 0}px`);
   root.setProperty("--safe-bottom", `${theme.safeAreaInset?.bottom ?? 0}px`);

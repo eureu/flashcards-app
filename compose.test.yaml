@@ -33,3 +33,35 @@ services:
       context: ./frontend
       target: test
 
+  api-e2e:
+    build:
+      context: .
+      target: app
+    environment:
+      APP_ENV: e2e
+      APP_SECRET: test-session-secret-with-at-least-32-characters
+      BOT_TOKEN: 123456:test-bot-token
+      DATABASE_URL: postgresql+psycopg://language_cards:language_cards@db-test:5432/language_cards_test
+      STATIC_DIR: /app/static
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:create_default_app --factory --host 0.0.0.0 --port 8000"]
+    depends_on:
+      db-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  browser-test:
+    build:
+      context: ./frontend
+      target: e2e
+    environment:
+      BASE_URL: http://api-e2e:8000
+    volumes:
+      - ./frontend/test-results:/app/test-results
+    depends_on:
+      api-e2e:
+        condition: service_healthy
+

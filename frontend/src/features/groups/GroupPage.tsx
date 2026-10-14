@@ -10,7 +10,12 @@ import {
 
 const ACTIVE_GROUP_KEY = "active-group-id";
 
-export function GroupPage({ onSelect }: { onSelect?: (group: GroupView) => void }) {
+interface GroupPageProps {
+  onSelect?: (group: GroupView) => void;
+  onAddShared?: () => void;
+}
+
+export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
   const [groups, setGroups] = useState<GroupView[]>([]);
   const [newName, setNewName] = useState("");
   const [inviteToken, setInviteToken] = useState("");
@@ -132,7 +137,18 @@ export function GroupPage({ onSelect }: { onSelect?: (group: GroupView) => void 
           >
             Выбрать для занятий
           </button>
-          {group.can_add_shared && <button type="button">Добавить общие слова</button>}
+          {group.can_add_shared && (
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.setItem(ACTIVE_GROUP_KEY, group.id);
+                onSelect?.(group);
+                onAddShared?.();
+              }}
+            >
+              Добавить общие слова
+            </button>
+          )}
           {group.is_owner ? (
             <button type="button" onClick={() => void handleInvitation(group.id)}>
               Создать приглашение
