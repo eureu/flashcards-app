@@ -14,6 +14,8 @@ from app.errors import install_error_handlers
 from app.groups import models as group_models  # noqa: F401
 from app.groups.routes import router as groups_router
 from app.imports.routes import router as imports_router
+from app.learning import models as learning_models  # noqa: F401
+from app.learning.routes import router as learning_router
 from app.operations import models as operation_models  # noqa: F401
 
 
@@ -34,6 +36,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(groups_router)
     app.include_router(cards_router)
     app.include_router(imports_router)
+    app.include_router(learning_router)
 
     @app.middleware("http")
     async def reject_oversized_body(request, call_next):
