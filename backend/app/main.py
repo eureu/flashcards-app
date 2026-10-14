@@ -9,6 +9,8 @@ from app.auth.routes import router as auth_router
 from app.config import Settings, load_settings
 from app.db import Base, create_database
 from app.errors import install_error_handlers
+from app.groups import models as group_models  # noqa: F401
+from app.groups.routes import router as groups_router
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -25,6 +27,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.settings = settings
     app.state.session_factory = session_factory
     app.include_router(auth_router)
+    app.include_router(groups_router)
     install_error_handlers(app)
     return app
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { bootstrapAuth } from "./api/auth";
 import type { Actor } from "./api/types";
 import { getTelegramWebApp, requireTelegramInitData } from "./telegram/bridge";
+import { GroupPage } from "./features/groups/GroupPage";
 
 export function App() {
   const [actor, setActor] = useState<Actor | null>(null);
@@ -21,5 +22,10 @@ export function App() {
   }, []);
 
   if (!actor) return <main>{message}</main>;
-  return <main>Привет, {actor.display_name}</main>;
+  return (
+    <main>
+      <p>Привет, {actor.display_name}</p>
+      <GroupPage />
+    </main>
+  );
 }
