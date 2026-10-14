@@ -25,7 +25,11 @@ import { GroupPage } from "./GroupPage";
 
 beforeEach(() => {
   localStorage.clear();
-  vi.clearAllMocks();
+  api.listGroups.mockReset();
+  api.createGroup.mockReset();
+  api.joinGroup.mockReset();
+  api.createInvitation.mockReset();
+  api.leaveGroup.mockReset();
   api.listGroups.mockResolvedValue([ownerGroup]);
 });
 
@@ -44,7 +48,7 @@ it("creates a trimmed group and refreshes the server-backed list", async () => {
     .mockResolvedValueOnce([{ ...ownerGroup, name: "New group" }]);
   render(<GroupPage />);
 
-  fireEvent.change(screen.getByLabelText("Название новой группы"), {
+  fireEvent.change(await screen.findByLabelText("Название новой группы"), {
     target: { value: "  New group  " },
   });
   fireEvent.click(screen.getByRole("button", { name: "Создать группу" }));

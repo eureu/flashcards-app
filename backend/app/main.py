@@ -6,6 +6,8 @@ from fastapi import FastAPI
 
 from app.auth import models as auth_models  # noqa: F401
 from app.auth.routes import router as auth_router
+from app.cards import models as card_models  # noqa: F401
+from app.cards.routes import router as cards_router
 from app.config import Settings, load_settings
 from app.db import Base, create_database
 from app.errors import install_error_handlers
@@ -28,6 +30,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.session_factory = session_factory
     app.include_router(auth_router)
     app.include_router(groups_router)
+    app.include_router(cards_router)
     install_error_handlers(app)
     return app
 

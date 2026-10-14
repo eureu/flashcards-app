@@ -3,6 +3,7 @@ import { bootstrapAuth } from "./api/auth";
 import type { Actor } from "./api/types";
 import { getTelegramWebApp, requireTelegramInitData } from "./telegram/bridge";
 import { GroupPage } from "./features/groups/GroupPage";
+import { WordListPage } from "./features/cards/WordListPage";
 
 export function App() {
   const [actor, setActor] = useState<Actor | null>(null);
@@ -26,6 +27,7 @@ export function App() {
     <main>
       <p>Привет, {actor.display_name}</p>
       <GroupPage />
+      <WordListPage canAddShared={false} />
     </main>
   );
 }
