@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { CardView, deleteCard, listCards } from "../../api/cards";
 import { CardEditor } from "./CardEditor";
+import { ImportPage } from "../imports/ImportPage";
 
 interface WordListPageProps {
   groupId?: string;
@@ -13,6 +14,7 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<CardView | "new" | null>(null);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -71,6 +73,10 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
         </label>
       )}
       <button type="button" onClick={() => setEditing("new")}>Добавить слово</button>
+      <button type="button" onClick={() => setImporting((value) => !value)}>
+        Добавить списком
+      </button>
+      {importing && <ImportPage groupId={groupId} canAddShared={canAddShared} />}
 
       {editing && (
         <CardEditor

@@ -13,6 +13,8 @@ from app.db import Base, create_database
 from app.errors import install_error_handlers
 from app.groups import models as group_models  # noqa: F401
 from app.groups.routes import router as groups_router
+from app.imports.routes import router as imports_router
+from app.operations import models as operation_models  # noqa: F401
 
 
 def create_app(settings: Settings) -> FastAPI:
@@ -31,6 +33,19 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(groups_router)
     app.include_router(cards_router)
+    app.include_router(imports_router)
+
+    @app.middleware("http")
+    async def reject_oversized_body(request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > 32 * 1024 * 1024:
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=413,
+                content={"error": {"code": "BODY_TOO_LARGE", "message": "Тело запроса слишком велико", "details": {}}},
+            )
+        return await call_next(request)
     install_error_handlers(app)
     return app
 
