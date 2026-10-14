@@ -10,7 +10,7 @@ import {
 
 const ACTIVE_GROUP_KEY = "active-group-id";
 
-export function GroupPage() {
+export function GroupPage({ onSelect }: { onSelect?: (group: GroupView) => void }) {
   const [groups, setGroups] = useState<GroupView[]>([]);
   const [newName, setNewName] = useState("");
   const [inviteToken, setInviteToken] = useState("");
@@ -125,7 +125,10 @@ export function GroupPage() {
           </ul>
           <button
             type="button"
-            onClick={() => localStorage.setItem(ACTIVE_GROUP_KEY, group.id)}
+            onClick={() => {
+              localStorage.setItem(ACTIVE_GROUP_KEY, group.id);
+              onSelect?.(group);
+            }}
           >
             Выбрать для занятий
           </button>
