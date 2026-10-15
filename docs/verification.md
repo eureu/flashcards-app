@@ -10,6 +10,7 @@ docker compose -f compose.test.yaml run --build --rm web-test npm test -- --run
 docker compose -f compose.test.yaml run --build --rm web-test npm run build
 docker compose -f compose.test.yaml run --build --rm browser-test npm run test:e2e
 docker compose -f compose.test.yaml config --quiet
+python3 -m unittest tests/test_deployment.py
 ```
 
 Сохранность данных после перезапуска проверяется только на изолированной тестовой БД:
@@ -25,14 +26,16 @@ Volume пользовательской базы эти команды не за
 
 ## Фактический результат 15 октября 2026
 
-- Backend в Python 3.13 Docker: `69 passed`; одно предупреждение об устаревающем alias Starlette/AnyIO, не влияющее на выполнение.
+- Backend в Python 3.13 Docker: `74 passed`; одно предупреждение об устаревающем alias Starlette/AnyIO, не влияющее на выполнение.
 - Frontend в Node 24 Docker: `30 passed`.
 - Production-сборка React/Vite: успешно.
 - Playwright/Chromium: `10 passed`, включая функциональный, recovery и визуальные сценарии, открытие приглашения по `start_param`, реальную потерю ответа после commit с повтором того же ключа, конкурентное изменение карточки и конкурентную оценку одного задания в PostgreSQL.
 - Перезапуск: seed и verify подтвердили ту же карточку, `StudyState` версии 1, срок следующего показа и одно событие повторения после restart API прямой проверкой PostgreSQL.
 - Compose-конфигурации: валидны.
+- Production deployment: `3 passed`; проверены изоляция FastAPI/PostgreSQL, HTTPS reverse proxy, Certbot volumes и shell-синтаксис deploy-скрипта.
+- Nginx `1.28-alpine`: обе конфигурации прошли `nginx -t`; контейнерная проверка подтвердила, что production Host принимается, а посторонний Host получает `444`.
 - `npm audit`: `0 vulnerabilities`.
-- Реальный Telegram: не проверялся, потому что бот и публичный HTTPS-адрес ещё не настроены.
+- Реальные Let's Encrypt, DNS и Telegram Bot API не проверялись локально: эти проверки выполняет deploy-скрипт на production-сервере.
 
 ## Трассировка критериев приёмки
 

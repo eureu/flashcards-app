@@ -25,13 +25,14 @@ services:
       APP_SECRET: ${APP_SECRET:?APP_SECRET must be set}
       BOT_TOKEN: ${BOT_TOKEN:?BOT_TOKEN must be set}
       BOT_USERNAME: ${BOT_USERNAME:?BOT_USERNAME must be set}
+      APP_PUBLIC_URL: https://flashcards.eureu.space
       DATABASE_URL: postgresql+psycopg://language_cards:${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}@db:5432/language_cards
       STATIC_DIR: /app/static
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
       interval: 10s
@@ -39,5 +40,46 @@ services:
       retries: 10
     restart: unless-stopped
 
+  nginx:
+    image: nginx:1.28-alpine
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/runtime:/etc/nginx/conf.d:ro
+      - certbot-certs:/etc/letsencrypt:ro
+      - certbot-webroot:/var/www/certbot:ro
+    command:
+      - /bin/sh
+      - -c
+      - while :; do sleep 6h & wait $$!; nginx -s reload; done & exec nginx -g 'daemon off;'
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "--header", "Host: flashcards.eureu.space", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot:v5.1.0
+    depends_on:
+      nginx:
+        condition: service_healthy
+    environment:
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-}
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $$!; done
+    restart: unless-stopped
+
 volumes:
   language-cards-db:
+  certbot-certs:
+  certbot-webroot:

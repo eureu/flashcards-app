@@ -22,14 +22,19 @@ docker compose -f compose.test.yaml run --build --rm web-test npm test -- --run
 
 Полная проверка, E2E и эксплуатация описаны в [docs/verification.md](docs/verification.md) и [docs/deployment.md](docs/deployment.md).
 
-## Запуск
+## Production-запуск
 
-Для запуска нужны реальные `BOT_TOKEN`, `BOT_USERNAME`, `APP_SECRET` и `DATABASE_PASSWORD` в локальном `.env`. Для пароля базы используйте URL-безопасную случайную строку, например результат `openssl rand -hex 24`. Затем:
+Production-адрес приложения зафиксирован как `https://flashcards.eureu.space`. На сервере должны быть установлены Docker Engine и Docker Compose v2, DNS домена должен указывать на сервер, а входящие TCP-порты `80` и `443` должны быть открыты.
+
+Для запуска нужны реальные `BOT_TOKEN`, `BOT_USERNAME`, `APP_SECRET` и `DATABASE_PASSWORD` в локальном `.env`. Для пароля базы используйте URL-безопасную случайную строку, например результат `openssl rand -hex 24`. `LETSENCRYPT_EMAIL` можно добавить для уведомлений Let's Encrypt; без него Certbot зарегистрирует аккаунт без email.
+
+После копирования репозитория и `.env` на сервер достаточно выполнить:
 
 ```bash
-docker compose build
-docker compose run --rm app alembic upgrade head
-docker compose up -d
+git pull
+./scripts/deploy.sh
 ```
 
-Приложение и API доступны на одном origin через порт `8000`; PostgreSQL наружу не публикуется. Единственный Telegram ID, которому разрешено добавлять общие карточки, зафиксирован как `1568151709`.
+Nginx автоматически обслуживает HTTPS, Certbot обновляет сертификат, а deploy-скрипт настраивает кнопку меню бота. FastAPI и PostgreSQL наружу не публикуются. Единственный Telegram ID, которому разрешено добавлять общие карточки, зафиксирован как `1568151709`.
+
+Полная инструкция, диагностика и обязательная настройка Main Mini App в BotFather приведены в [docs/deployment.md](docs/deployment.md).
