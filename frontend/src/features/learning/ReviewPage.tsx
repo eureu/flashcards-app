@@ -57,6 +57,14 @@ export function ReviewPage({ groupId, onExit }: { groupId?: string; onExit: () =
         setPending(null);
         setMessage("Карточка изменилась на другом устройстве. Загружена актуальная версия.");
         await load(item.card_id);
+      } else if (typeof error === "object" && error !== null && "status" in error && error.status === 403) {
+        setPending(null);
+        setItem(null);
+        setMessage("Доступ к группе изменился. Вернитесь к выбору набора.");
+      } else if (typeof error === "object" && error !== null && "status" in error && error.status === 404) {
+        setPending(null);
+        setMessage("Карточка больше недоступна. Загружено следующее задание.");
+        await load(item.card_id);
       } else {
         setPending({ rating, key });
         setMessage("Оценка не отправлена. Ответ сохранён на экране.");

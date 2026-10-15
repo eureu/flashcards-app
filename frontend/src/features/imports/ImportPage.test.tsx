@@ -73,3 +73,22 @@ it("reuses the operation key after a network failure", async () => {
   expect(api.commitImport.mock.calls[0][1]).toBe(api.commitImport.mock.calls[1][1]);
   expect(await screen.findByText("Добавлено карточек: 1")).toBeInTheDocument();
 });
+
+it("refreshes preview instead of retrying a stale confirmation", async () => {
+  const changedPreview = {
+    ...validPreview,
+    rows: [{ ...validPreview.rows[0], duplicate: true, selected: false }],
+    selected_count: 0,
+    confirmation_token: null,
+  };
+  api.previewImport.mockResolvedValueOnce(validPreview).mockResolvedValueOnce(changedPreview);
+  api.commitImport.mockRejectedValue({ status: 409, code: "DUPLICATES_CHANGED" });
+  render(<ImportPage canAddShared={false} />);
+  fireEvent.change(screen.getByLabelText("Список слов"), { target: { value: "Purpose - цель" } });
+  fireEvent.click(screen.getByRole("button", { name: "Проверить список" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Добавить 1" }));
+
+  expect(await screen.findByText("Список изменился. Проверьте обновлённый предпросмотр.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Повторить" })).toBeNull();
+  expect(api.previewImport).toHaveBeenCalledTimes(2);
+});

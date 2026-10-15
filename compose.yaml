@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: language_cards
       POSTGRES_USER: language_cards
-      POSTGRES_PASSWORD: language_cards
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}
     volumes:
       - language-cards-db:/var/lib/postgresql/data
     healthcheck:
@@ -24,7 +24,8 @@ services:
       APP_ENV: production
       APP_SECRET: ${APP_SECRET:?APP_SECRET must be set}
       BOT_TOKEN: ${BOT_TOKEN:?BOT_TOKEN must be set}
-      DATABASE_URL: postgresql+psycopg://language_cards:language_cards@db:5432/language_cards
+      BOT_USERNAME: ${BOT_USERNAME:?BOT_USERNAME must be set}
+      DATABASE_URL: postgresql+psycopg://language_cards:${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set}@db:5432/language_cards
       STATIC_DIR: /app/static
     depends_on:
       db:

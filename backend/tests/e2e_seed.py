@@ -9,9 +9,14 @@ import os
 import sys
 import time
 from urllib.parse import urlencode
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
+from sqlalchemy import create_engine, func, select
+from sqlalchemy.orm import Session
+
+from app.auth.models import User
+from app.learning.models import ReviewEvent, StudyState
 
 BOT_TOKEN = "123456:test-bot-token"
 TELEGRAM_ID = 1568151709
@@ -97,7 +102,37 @@ def verify(client: httpx.Client, headers: dict[str, str]) -> None:
     summary.raise_for_status()
     assert card["visibility"] == "group"
     assert summary.json()["can_start"] is True
-    print(json.dumps({"persisted": True, "group_id": group["id"], "card_id": card["id"]}))
+    engine = create_engine(os.environ["DATABASE_URL"])
+    with Session(engine) as db:
+        user = db.scalar(select(User).where(User.telegram_id == TELEGRAM_ID))
+        assert user is not None
+        state = db.scalar(
+            select(StudyState).where(
+                StudyState.user_id == user.id,
+                StudyState.card_id == UUID(card["id"]),
+                StudyState.direction == "en_ru",
+            )
+        )
+        assert state is not None
+        assert state.version >= 1
+        event_count = db.scalar(
+            select(func.count()).select_from(ReviewEvent).where(
+                ReviewEvent.user_id == user.id,
+                ReviewEvent.card_id == UUID(card["id"]),
+                ReviewEvent.direction == "en_ru",
+            )
+        )
+        assert event_count is not None and event_count >= 1
+        result = {
+            "persisted": True,
+            "group_id": group["id"],
+            "card_id": card["id"],
+            "state_version": state.version,
+            "due_at": state.due_at.isoformat(),
+            "event_count": event_count,
+        }
+    engine.dispose()
+    print(json.dumps(result))
 
 
 def main() -> None:

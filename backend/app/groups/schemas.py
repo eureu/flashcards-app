@@ -25,6 +25,7 @@ class GroupView(BaseModel):
 
 class InvitationCreated(BaseModel):
     token: str
+    url: str | None = None
 
 
 class InvitationPreview(BaseModel):

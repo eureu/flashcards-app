@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_actor
 from app.auth.schemas import Actor
 from app.cards.schemas import CardCreate, CardDelete, CardUpdate, CardView
-from app.cards.service import create_card, delete_card, list_cards, update_card
+from app.cards.service import create_card, delete_card, get_card, list_cards, update_card
 from app.db import get_session
 
 router = APIRouter(prefix="/api/cards")
@@ -35,6 +35,15 @@ def cards_create(
     db: Session = Depends(get_session),
 ) -> CardView:
     return create_card(db, actor, payload.target, payload.front, payload.back)
+
+
+@router.get("/{card_id}", response_model=CardView)
+def cards_show(
+    card_id: UUID,
+    actor: Actor = Depends(get_current_actor),
+    db: Session = Depends(get_session),
+) -> CardView:
+    return get_card(db, actor, card_id)
 
 
 @router.patch("/{card_id}", response_model=CardView)

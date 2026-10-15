@@ -16,20 +16,20 @@ docker compose -f compose.test.yaml config --quiet
 
 ```bash
 docker compose -f compose.test.yaml up -d --build api-e2e
-docker compose -f compose.test.yaml run --rm -e E2E_BASE_URL=http://api-e2e:8000 api-test python tests/e2e_seed.py seed
+docker compose -f compose.test.yaml run --rm -e E2E_BASE_URL=http://api-e2e:8000 api-test python -m tests.e2e_seed seed
 docker compose -f compose.test.yaml restart api-e2e
-docker compose -f compose.test.yaml run --rm -e E2E_BASE_URL=http://api-e2e:8000 api-test python tests/e2e_seed.py verify
+docker compose -f compose.test.yaml run --rm -e E2E_BASE_URL=http://api-e2e:8000 api-test python -m tests.e2e_seed verify
 ```
 
 Volume пользовательской базы эти команды не затрагивают; тестовая БД использует `tmpfs`.
 
-## Фактический результат 14 октября 2026
+## Фактический результат 15 октября 2026
 
-- Backend в Python 3.13 Docker: `66 passed`; одно предупреждение об устаревающем alias Starlette/AnyIO, не влияющее на выполнение.
-- Frontend в Node 24 Docker: `21 passed`.
+- Backend в Python 3.13 Docker: `69 passed`; одно предупреждение об устаревающем alias Starlette/AnyIO, не влияющее на выполнение.
+- Frontend в Node 24 Docker: `29 passed`.
 - Production-сборка React/Vite: успешно.
-- Playwright/Chromium: `6 passed`, включая функциональный, recovery и визуальные сценарии.
-- Перезапуск: seed и verify подтвердили ту же карточку и сохранённое расписание после restart API.
+- Playwright/Chromium: `8 passed`, включая функциональный, recovery и визуальные сценарии, реальную потерю ответа после commit с повтором того же ключа и конкурентное изменение карточки в PostgreSQL.
+- Перезапуск: seed и verify подтвердили ту же карточку, `StudyState` версии 1, срок следующего показа и одно событие повторения после restart API прямой проверкой PostgreSQL.
 - Compose-конфигурации: валидны.
 - `npm audit`: `0 vulnerabilities`.
 - Реальный Telegram: не проверялся, потому что бот и публичный HTTPS-адрес ещё не настроены.
@@ -40,7 +40,7 @@ Volume пользовательской базы эти команды не за
 - AC05–AC07: тесты парсера, предпросмотра, ошибок строк и дубликатов.
 - AC08, AC14, AC18: компонентные и браузерные тесты закрытой/раскрытой карточки и четырёх внешних оценок.
 - AC10: детерминированные тесты FSRS для «Снова» и «Легко».
-- AC12: seed → перезапуск API → verify на одной тестовой БД.
+- AC12: seed → перезапуск API → verify через API и прямой запрос состояния/события в одной тестовой БД.
 - AC13: проверка спецификации и интерфейса; таймеры, цели и напоминания отсутствуют.
 - AC15: скриншоты Playwright на 320/390 px, обе темы, длинная фраза, оценки и ошибка; автоматическая проверка переполнения, позиции кнопок, контраста и клавиатурного фокуса.
 - AC16–AC17: backend-тесты удалённых/недоступных карточек и подписанного Telegram initData.

@@ -32,7 +32,8 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
   }
 
   async function remove(card: CardView) {
-    if (!window.confirm(`Удалить «${card.front}»?`)) return;
+    const ownership = card.visibility === "group" ? "общую" : "личную";
+    if (!window.confirm(`Удалить ${ownership} карточку «${card.front}»?`)) return;
     try {
       await deleteCard(card.id, card.version);
       await refresh();
@@ -94,6 +95,8 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
           <li key={card.id}>
             <span>{card.front}</span>
             <span> — {card.back}</span>
+            {" · "}
+            <span className="muted">{card.visibility === "group" ? "Общая" : "Личная"}</span>
             {card.can_edit && (
               <button type="button" aria-label={`Изменить ${card.front}`} onClick={() => setEditing(card)}>
                 Изменить

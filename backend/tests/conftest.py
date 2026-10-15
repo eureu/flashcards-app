@@ -43,7 +43,11 @@ def client():
 
 @pytest.fixture
 def signed_init_data():
-    def build(telegram_id: int, auth_date: datetime | None = None) -> str:
+    def build(
+        telegram_id: int,
+        auth_date: datetime | None = None,
+        start_param: str | None = None,
+    ) -> str:
         issued_at = auth_date or FIXED_NOW
         fields = {
             "auth_date": str(int(issued_at.timestamp())),
@@ -54,6 +58,8 @@ def signed_init_data():
                 ensure_ascii=False,
             ),
         }
+        if start_param is not None:
+            fields["start_param"] = start_param
         data_check_string = "\n".join(f"{key}={fields[key]}" for key in sorted(fields))
         secret_key = hmac.new(b"WebAppData", TEST_BOT_TOKEN.encode(), hashlib.sha256).digest()
         fields["hash"] = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()

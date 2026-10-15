@@ -28,3 +28,4 @@ class TelegramLoginResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int = 43_200
     user: Actor
+    start_param: str | None = None

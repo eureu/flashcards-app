@@ -24,7 +24,7 @@ docker compose -f compose.test.yaml run --build --rm web-test npm test -- --run
 
 ## Запуск
 
-Для запуска нужны реальные `BOT_TOKEN` и `APP_SECRET` в локальном `.env`. Затем:
+Для запуска нужны реальные `BOT_TOKEN`, `BOT_USERNAME`, `APP_SECRET` и `DATABASE_PASSWORD` в локальном `.env`. Для пароля базы используйте URL-безопасную случайную строку, например результат `openssl rand -hex 24`. Затем:
 
 ```bash
 docker compose build

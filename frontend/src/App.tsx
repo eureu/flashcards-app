@@ -20,6 +20,7 @@ export function App() {
   const [section, setSection] = useState<AppSection>("study");
   const [reviewing, setReviewing] = useState(false);
   const [activeGroup, setActiveGroup] = useState<GroupView | null>(null);
+  const [startParam, setStartParam] = useState<string | null>(null);
 
   useEffect(() => {
     const telegram = getTelegramWebApp();
@@ -30,14 +31,16 @@ export function App() {
     const syncTheme = () => applyTelegramTheme({
       colorScheme: telegram.colorScheme,
       themeParams: telegram.themeParams,
+      safeAreaInset: telegram.contentSafeAreaInset ?? telegram.safeAreaInset,
     });
     syncTheme();
     const unsubscribe = subscribeTelegramLayout(syncTheme);
     telegram.ready();
     telegram.expand();
     bootstrapAuth(requireTelegramInitData())
-      .then(async (nextActor) => {
+      .then(async ({ actor: nextActor, startParam: nextStartParam }) => {
         setActor(nextActor);
+        setStartParam(nextStartParam);
         const groups = await listGroups();
         const saved = localStorage.getItem("active-group-id");
         const selected = groups.find((group) => group.id === saved) ?? null;
@@ -50,7 +53,15 @@ export function App() {
 
   if (!actor) return <main className="app-shell">{message}</main>;
   if (reviewing) {
-    return <ReviewPage groupId={activeGroup?.id} onExit={() => setReviewing(false)} />;
+    return <ReviewPage groupId={activeGroup?.id} onExit={() => {
+      setReviewing(false);
+      void listGroups().then((groups) => {
+        if (activeGroup && !groups.some((group) => group.id === activeGroup.id)) {
+          localStorage.removeItem("active-group-id");
+          setActiveGroup(null);
+        }
+      });
+    }} />;
   }
 
   return (
@@ -71,6 +82,8 @@ export function App() {
       )}
       {section === "groups" && (
         <GroupPage
+          activeGroupId={activeGroup?.id}
+          initialInviteToken={startParam}
           onSelect={setActiveGroup}
           onAddShared={() => setSection("words")}
         />

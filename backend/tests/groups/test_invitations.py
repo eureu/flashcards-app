@@ -16,6 +16,16 @@ def test_invitation_preview_exposes_only_group_name(client, auth_headers):
     assert response.json() == {"group_name": "Friends"}
 
 
+def test_invitation_creation_returns_main_mini_app_link(client, auth_headers):
+    client.app.state.settings.bot_username = "language_cards_test_bot"
+    owner_headers = auth_headers(2000000010)
+    group = client.post("/api/groups", headers=owner_headers, json={"name": "Friends"}).json()
+
+    result = client.post(f"/api/groups/{group['id']}/invitation", headers=owner_headers).json()
+
+    assert result["url"] == f"https://t.me/language_cards_test_bot?startapp={result['token']}"
+
+
 def test_duplicate_join_keeps_one_membership(client, auth_headers):
     _, group, token = _group_and_token(client, auth_headers)
     member_headers = auth_headers(2000000002)

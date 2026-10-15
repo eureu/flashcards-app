@@ -66,3 +66,25 @@ it("retry reuses the key and preserves the revealed answer", async () => {
   await waitFor(() => expect(api.submitReview).toHaveBeenCalledTimes(2));
   expect(api.submitReview.mock.calls[0][1]).toBe(api.submitReview.mock.calls[1][1]);
 });
+
+it("stops retrying when group access was lost", async () => {
+  api.submitReview.mockRejectedValue({ status: 403, code: "FORBIDDEN" });
+  render(<ReviewPage groupId="group-1" onExit={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Показать ответ" }));
+  fireEvent.click(screen.getByRole("button", { name: "Вспомнил" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Доступ к группе изменился");
+  expect(screen.queryByRole("button", { name: "Повторить отправку" })).toBeNull();
+});
+
+it("loads another item when the current card was deleted", async () => {
+  api.submitReview.mockRejectedValue({ status: 404, code: "NOT_FOUND" });
+  api.getNextItem.mockResolvedValueOnce(item).mockResolvedValueOnce(null);
+  render(<ReviewPage onExit={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Показать ответ" }));
+  fireEvent.click(screen.getByRole("button", { name: "Вспомнил" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Карточка больше недоступна");
+  expect(api.getNextItem).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole("button", { name: "Повторить отправку" })).toBeNull();
+});

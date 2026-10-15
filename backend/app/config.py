@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_secret: str = Field(min_length=32)
     bot_token: str = Field(min_length=1)
+    bot_username: str = ""
     database_url: str
     static_dir: str | None = None
 

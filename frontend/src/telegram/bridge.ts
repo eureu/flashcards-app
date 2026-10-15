@@ -4,6 +4,8 @@ interface TelegramWebApp {
   expand(): void;
   colorScheme?: "light" | "dark";
   themeParams?: TelegramThemeParams;
+  safeAreaInset?: { top?: number; right?: number; bottom?: number; left?: number };
+  contentSafeAreaInset?: { top?: number; right?: number; bottom?: number; left?: number };
   onEvent?(event: string, callback: () => void): void;
   offEvent?(event: string, callback: () => void): void;
   BackButton?: {
@@ -77,16 +79,28 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
   const scheme = theme.colorScheme === "dark" ? "dark" : "light";
   const fallback = FALLBACK[scheme];
   const params = theme.themeParams ?? {};
-  const background = params.bg_color ?? fallback.background;
+  let background = params.bg_color ?? fallback.background;
+  let surface = params.secondary_bg_color ?? fallback.surface;
   const proposedText = params.text_color ?? fallback.text;
-  const text = sufficient(proposedText, background) ? proposedText : fallback.text;
+  let text = proposedText;
+  if (!sufficient(text, background) || !sufficient(text, surface)) {
+    background = fallback.background;
+    surface = fallback.surface;
+    text = fallback.text;
+  }
+  let accent = params.button_color ?? fallback.accent;
+  let accentText = params.button_text_color ?? fallback.accentText;
+  if (!sufficient(accentText, accent)) {
+    accent = fallback.accent;
+    accentText = fallback.accentText;
+  }
   const root = document.documentElement.style;
   root.setProperty("--color-background", background);
-  root.setProperty("--color-surface", params.secondary_bg_color ?? fallback.surface);
+  root.setProperty("--color-surface", surface);
   root.setProperty("--color-text", text);
-  root.setProperty("--color-muted", params.hint_color && sufficient(params.hint_color, background) ? params.hint_color : fallback.muted);
-  root.setProperty("--color-accent", params.button_color ?? fallback.accent);
-  root.setProperty("--color-accent-text", params.button_text_color && sufficient(params.button_text_color, params.button_color ?? fallback.accent) ? params.button_text_color : fallback.accentText);
+  root.setProperty("--color-muted", params.hint_color && sufficient(params.hint_color, background) && sufficient(params.hint_color, surface) ? params.hint_color : fallback.muted);
+  root.setProperty("--color-accent", accent);
+  root.setProperty("--color-accent-text", accentText);
   root.setProperty("--color-again", fallback.again);
   root.setProperty("--color-hard", fallback.hard);
   root.setProperty("--color-good", fallback.good);

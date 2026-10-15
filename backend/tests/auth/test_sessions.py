@@ -42,6 +42,16 @@ def test_health_is_public(client):
     assert client.get("/api/health").json() == {"status": "ok"}
 
 
+def test_login_returns_verified_start_parameter(client, signed_init_data):
+    response = client.post(
+        "/api/auth/telegram",
+        json={"init_data": signed_init_data(2000000001, start_param="invite-token")},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["start_param"] == "invite-token"
+
+
 def test_unknown_api_route_is_not_frontend(client):
     response = client.get("/api/unknown")
 

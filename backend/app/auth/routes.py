@@ -31,6 +31,7 @@ def telegram_login(
         access_token=create_session_token(user.id, settings.app_secret, now),
         expires_in=int(SESSION_LIFETIME.total_seconds()),
         user=actor,
+        start_param=identity.start_param,
     )
 
 

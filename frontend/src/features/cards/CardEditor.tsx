@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import {
   CardView,
   createCard,
+  getCard,
   updateCard,
 } from "../../api/cards";
 
@@ -25,6 +26,8 @@ export function CardEditor({
   const [visibility, setVisibility] = useState<"personal" | "group">("personal");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [version, setVersion] = useState(card?.version ?? 0);
+  const [serverCopy, setServerCopy] = useState<CardView | null>(null);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -35,7 +38,7 @@ export function CardEditor({
         await updateCard(card.id, {
           front: front.trim(),
           back: back.trim(),
-          expected_version: card.version,
+          expected_version: version,
         });
       } else {
         const target =
@@ -56,6 +59,21 @@ export function CardEditor({
       } else {
         setError("Не удалось сохранить карточку");
       }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function reloadVersion() {
+    if (!card) return;
+    setSaving(true);
+    try {
+      const latest = await getCard(card.id);
+      setVersion(latest.version);
+      setServerCopy(latest);
+      setError("Версия обновлена. Ваш черновик сохранён — сравните его с текущим текстом и сохраните снова.");
+    } catch {
+      setError("Не удалось загрузить актуальную версию карточки");
     } finally {
       setSaving(false);
     }
@@ -94,6 +112,14 @@ export function CardEditor({
         />
       </label>
       {error && <p role="alert">{error}</p>}
+      {serverCopy && (
+        <p className="notice">Сейчас в словаре: {serverCopy.front} — {serverCopy.back}</p>
+      )}
+      {card && error?.startsWith("Карточка уже изменена") && (
+        <button type="button" disabled={saving} onClick={() => void reloadVersion()}>
+          Загрузить актуальную версию
+        </button>
+      )}
       <button type="submit" disabled={saving || !front.trim() || !back.trim()}>
         {saving ? "Сохраняем…" : "Сохранить"}
       </button>

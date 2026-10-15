@@ -31,11 +31,14 @@ export function joinGroup(token: string): Promise<GroupView> {
   });
 }
 
-export async function createInvitation(groupId: string): Promise<string> {
-  const response = await apiFetch<{ token: string }>(`/api/groups/${groupId}/invitation`, {
+export function previewInvitation(token: string): Promise<{ group_name: string }> {
+  return apiFetch(`/api/invitations/${encodeURIComponent(token)}`);
+}
+
+export function createInvitation(groupId: string): Promise<{ token: string; url: string | null }> {
+  return apiFetch<{ token: string; url: string | null }>(`/api/groups/${groupId}/invitation`, {
     method: "POST",
   });
-  return response.token;
 }
 
 export function leaveGroup(groupId: string): Promise<null> {

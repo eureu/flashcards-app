@@ -77,9 +77,14 @@ export function ImportPage({ groupId, canAddShared }: ImportPageProps) {
         key,
       );
       setMessage(`Добавлено карточек: ${result.created_count}`);
-    } catch {
-      setMessage("Не удалось добавить карточки. Проверьте соединение.");
-      setRetry(true);
+    } catch (caught) {
+      if (typeof caught === "object" && caught !== null && "status" in caught && caught.status === 409) {
+        await requestPreview(preview.rows);
+        setMessage("Список изменился. Проверьте обновлённый предпросмотр.");
+      } else {
+        setMessage("Не удалось добавить карточки. Проверьте соединение.");
+        setRetry(true);
+      }
     } finally {
       setSaving(false);
     }

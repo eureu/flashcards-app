@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_actor
@@ -55,10 +55,14 @@ def groups_show(
 @router.post("/groups/{group_id}/invitation", response_model=InvitationCreated)
 def invitations_create(
     group_id: UUID,
+    request: Request,
     actor: Actor = Depends(get_current_actor),
     db: Session = Depends(get_session),
 ) -> InvitationCreated:
-    return InvitationCreated(token=create_invitation(db, actor, group_id))
+    token = create_invitation(db, actor, group_id)
+    bot_username = request.app.state.settings.bot_username.strip().lstrip("@")
+    url = f"https://t.me/{bot_username}?startapp={token}" if bot_username else None
+    return InvitationCreated(token=token, url=url)
 
 
 @router.get("/invitations/{token}", response_model=InvitationPreview)

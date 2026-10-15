@@ -16,8 +16,11 @@ from app.groups.models import Group
 from app.groups.service import require_membership
 
 
-def _card_or_404(db: Session, card_id: UUID) -> Card:
-    card = db.scalar(select(Card).where(Card.id == card_id, Card.deleted_at.is_(None)))
+def _card_or_404(db: Session, card_id: UUID, *, lock: bool = False) -> Card:
+    statement = select(Card).where(Card.id == card_id, Card.deleted_at.is_(None))
+    if lock:
+        statement = statement.with_for_update()
+    card = db.scalar(statement)
     if card is None:
         raise DomainError("NOT_FOUND", "Карточка не найдена", 404)
     return card
@@ -66,6 +69,17 @@ def create_card(
     return _view(db, actor, card)
 
 
+def get_card(db: Session, actor: Actor, card_id: UUID) -> CardView:
+    card = _card_or_404(db, card_id)
+    if card.visibility == "personal":
+        if card.author_id != actor.user_id:
+            raise DomainError("NOT_FOUND", "Карточка не найдена", 404)
+    else:
+        assert card.group_id is not None
+        require_membership(db, actor, card.group_id)
+    return _view(db, actor, card)
+
+
 def update_card(
     db: Session,
     actor: Actor,
@@ -74,7 +88,7 @@ def update_card(
     back: str,
     expected_version: int,
 ) -> CardView:
-    card = _card_or_404(db, card_id)
+    card = _card_or_404(db, card_id, lock=True)
     require_edit_access(db, actor, card)
     if card.version != expected_version:
         raise DomainError(
@@ -98,7 +112,7 @@ def delete_card(
     expected_version: int,
     now: datetime | None = None,
 ) -> None:
-    card = _card_or_404(db, card_id)
+    card = _card_or_404(db, card_id, lock=True)
     require_delete_access(db, actor, card)
     if card.version != expected_version:
         raise DomainError(

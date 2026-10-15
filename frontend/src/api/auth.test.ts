@@ -10,6 +10,7 @@ describe("Telegram authentication", () => {
         access_token: "session-token",
         token_type: "bearer",
         expires_in: 43200,
+        start_param: "invite-token",
         user: { user_id: "00000000-0000-0000-0000-000000000001", telegram_id: 1568151709, display_name: "Veniamin" }
       }), { status: 200, headers: { "Content-Type": "application/json" } }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ status: "ok" }), {
@@ -19,10 +20,11 @@ describe("Telegram authentication", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const { apiFetch, bootstrapAuth } = await import("./auth");
-    const actor = await bootstrapAuth("signed-init-data");
+    const auth = await bootstrapAuth("signed-init-data");
     await apiFetch<{ status: string }>("/api/health");
 
-    expect(actor.telegram_id).toBe(1568151709);
+    expect(auth.actor.telegram_id).toBe(1568151709);
+    expect(auth.startParam).toBe("invite-token");
     const headers = new Headers(fetchMock.mock.calls[1][1]?.headers);
     expect(headers.get("Authorization")).toBe("Bearer session-token");
   });

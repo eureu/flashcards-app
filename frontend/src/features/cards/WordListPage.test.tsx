@@ -4,6 +4,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({
   listCards: vi.fn(),
   createCard: vi.fn(),
+  getCard: vi.fn(),
   updateCard: vi.fn(),
   deleteCard: vi.fn(),
 }));
@@ -70,8 +71,30 @@ it("renders hostile-looking card content as plain text", async () => {
   expect(container.querySelector("img")).toBeNull();
 });
 
+it("labels shared and personal cards and names ownership in delete confirmation", async () => {
+  const personalCard = {
+    ...sharedCard,
+    id: "10000000-0000-0000-0000-000000000002",
+    front: "Grace",
+    back: "благодать",
+    visibility: "personal" as const,
+    group_id: null,
+    can_delete: true,
+  };
+  api.listCards.mockResolvedValue([sharedCard, personalCard]);
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  render(<WordListPage groupId={sharedCard.group_id} canAddShared={false} />);
+
+  expect(await screen.findByText("Общая")).toBeInTheDocument();
+  expect(screen.getByText("Личная")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Удалить Grace" }));
+  expect(confirm).toHaveBeenCalledWith("Удалить личную карточку «Grace»?");
+  confirm.mockRestore();
+});
+
 it("keeps edited text visible after a version conflict", async () => {
-  api.updateCard.mockRejectedValue({ status: 409 });
+  api.updateCard.mockRejectedValueOnce({ status: 409 }).mockResolvedValueOnce({ ...sharedCard, version: 3 });
+  api.getCard.mockResolvedValue({ ...sharedCard, back: "актуальная цель", version: 2 });
   render(<WordListPage groupId={sharedCard.group_id} canAddShared={false} />);
   await screen.findByText("Purpose");
   fireEvent.click(screen.getByRole("button", { name: "Изменить Purpose" }));
@@ -80,4 +103,13 @@ it("keeps edited text visible after a version conflict", async () => {
 
   expect(await screen.findByRole("alert")).toHaveTextContent("Карточка уже изменена");
   expect(screen.getByLabelText("Перевод")).toHaveValue("назначение");
+  fireEvent.click(screen.getByRole("button", { name: "Загрузить актуальную версию" }));
+  expect(await screen.findByText("Сейчас в словаре: Purpose — актуальная цель")).toBeInTheDocument();
+  expect(screen.getByLabelText("Перевод")).toHaveValue("назначение");
+  fireEvent.click(screen.getByRole("button", { name: "Сохранить" }));
+  await waitFor(() => expect(api.updateCard).toHaveBeenLastCalledWith(sharedCard.id, {
+    front: "Purpose",
+    back: "назначение",
+    expected_version: 2,
+  }));
 });

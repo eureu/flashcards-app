@@ -35,6 +35,74 @@ test("повтор оценки после потерянного ответа �
   await client.dispose();
 });
 
+test("два одновременных изменения карточки дают один конфликт версии", async ({ baseURL }) => {
+  const userId = 2150000000 + (Date.now() % 1000000);
+  const client = await request.newContext({ baseURL });
+  const auth = await client.post("/api/auth/telegram", {
+    data: { init_data: signedInitData(userId, "Конкурентное изменение") },
+  });
+  const token = (await auth.json()).access_token as string;
+  const headers = { Authorization: `Bearer ${token}` };
+  const created = await client.post("/api/cards", {
+    headers,
+    data: { target: { visibility: "personal" }, front: "Concurrent", back: "Исходный" },
+  });
+  const card = await created.json();
+
+  const responses = await Promise.all([
+    client.patch(`/api/cards/${card.id}`, {
+      headers,
+      data: { front: "Concurrent", back: "Первый", expected_version: card.version },
+    }),
+    client.patch(`/api/cards/${card.id}`, {
+      headers,
+      data: { front: "Concurrent", back: "Второй", expected_version: card.version },
+    }),
+  ]);
+
+  expect(responses.map((response) => response.status()).sort()).toEqual([200, 409]);
+  await client.dispose();
+});
+
+test("потерянный после commit ответ повторяется тем же ключом", async ({ page, baseURL }) => {
+  const userId = 2170000000 + (Date.now() % 1000000);
+  const client = await request.newContext({ baseURL });
+  const auth = await client.post("/api/auth/telegram", {
+    data: { init_data: signedInitData(userId, "Потерянный ответ") },
+  });
+  const token = (await auth.json()).access_token as string;
+  await client.post("/api/cards", {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { target: { visibility: "personal" }, front: "Committed", back: "Сохранено" },
+  });
+
+  await installTelegram(page, userId, "Потерянный ответ");
+  const keys: string[] = [];
+  let dropped = false;
+  await page.route("**/api/learning/reviews", async (route) => {
+    keys.push(route.request().headers()["idempotency-key"]);
+    if (!dropped) {
+      const committed = await route.fetch();
+      expect(committed.ok()).toBeTruthy();
+      dropped = true;
+      return route.abort("failed");
+    }
+    return route.continue();
+  });
+
+  await page.goto(baseURL!);
+  await page.getByRole("button", { name: "Начать" }).click();
+  await page.getByRole("button", { name: "Показать перевод" }).click();
+  await page.getByRole("button", { name: "Вспомнил", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("Оценка не отправлена");
+  await page.getByRole("button", { name: "Повторить отправку" }).click();
+
+  await expect.poll(() => keys.length).toBe(2);
+  expect(keys[0]).toBe(keys[1]);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await client.dispose();
+});
+
 test("карточка, оценки и ошибка помещаются на узком экране", async ({ page, baseURL }, testInfo) => {
   const dark = testInfo.project.name.includes("dark");
   await page.setViewportSize({ width: 320, height: 720 });

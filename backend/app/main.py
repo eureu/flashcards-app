@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.auth import models as auth_models  # noqa: F401
 from app.auth.routes import router as auth_router
+from app.body_limit import RequestBodyLimitMiddleware
 from app.cards import models as card_models  # noqa: F401
 from app.cards.routes import router as cards_router
 from app.config import Settings, load_settings
@@ -41,17 +42,7 @@ def create_app(settings: Settings) -> FastAPI:
     app.include_router(imports_router)
     app.include_router(learning_router)
 
-    @app.middleware("http")
-    async def reject_oversized_body(request, call_next):
-        content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > 32 * 1024 * 1024:
-            from fastapi.responses import JSONResponse
-
-            return JSONResponse(
-                status_code=413,
-                content={"error": {"code": "BODY_TOO_LARGE", "message": "Тело запроса слишком велико", "details": {}}},
-            )
-        return await call_next(request)
+    app.add_middleware(RequestBodyLimitMiddleware)
     install_error_handlers(app)
 
     if settings.static_dir:

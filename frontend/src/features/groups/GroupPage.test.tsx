@@ -17,6 +17,7 @@ const api = vi.hoisted(() => ({
   joinGroup: vi.fn(),
   createInvitation: vi.fn(),
   leaveGroup: vi.fn(),
+  previewInvitation: vi.fn(),
 }));
 
 vi.mock("../../api/groups", () => api);
@@ -30,6 +31,7 @@ beforeEach(() => {
   api.joinGroup.mockReset();
   api.createInvitation.mockReset();
   api.leaveGroup.mockReset();
+  api.previewInvitation.mockReset();
   api.listGroups.mockResolvedValue([ownerGroup]);
 });
 
@@ -80,4 +82,39 @@ it("opens shared import for the selected publisher group", async () => {
   expect(localStorage.getItem("active-group-id")).toBe(publisherGroup.id);
   expect(onSelect).toHaveBeenCalledWith(publisherGroup);
   expect(onAddShared).toHaveBeenCalledOnce();
+});
+
+it("switches explicitly to personal cards", async () => {
+  const onSelect = vi.fn();
+  render(<GroupPage onSelect={onSelect} />);
+
+  fireEvent.click(await screen.findByRole("button", { name: "Учить только личные слова" }));
+
+  expect(localStorage.getItem("active-group-id")).toBeNull();
+  expect(onSelect).toHaveBeenCalledWith(null);
+});
+
+it("clears the active group in the parent after leaving it", async () => {
+  const memberGroup = { ...ownerGroup, is_owner: false };
+  const onSelect = vi.fn();
+  api.listGroups.mockResolvedValueOnce([memberGroup]).mockResolvedValueOnce([]);
+  api.leaveGroup.mockResolvedValue(null);
+  localStorage.setItem("active-group-id", memberGroup.id);
+
+  render(<GroupPage activeGroupId={memberGroup.id} onSelect={onSelect} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Выйти из группы" }));
+
+  await waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
+  expect(localStorage.getItem("active-group-id")).toBeNull();
+});
+
+it("previews and joins a group from Telegram start_param", async () => {
+  api.previewInvitation.mockResolvedValue({ group_name: "Friends" });
+  api.joinGroup.mockResolvedValue(ownerGroup);
+  render(<GroupPage initialInviteToken="invite-token" />);
+
+  expect(await screen.findByText("Вас приглашают в группу «Friends»." )).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Вступить по приглашению" }));
+
+  await waitFor(() => expect(api.joinGroup).toHaveBeenCalledWith("invite-token"));
 });

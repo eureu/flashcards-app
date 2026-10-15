@@ -6,20 +6,24 @@ import {
   joinGroup,
   leaveGroup,
   listGroups,
+  previewInvitation,
 } from "../../api/groups";
 
 const ACTIVE_GROUP_KEY = "active-group-id";
 
 interface GroupPageProps {
-  onSelect?: (group: GroupView) => void;
+  activeGroupId?: string;
+  initialInviteToken?: string | null;
+  onSelect?: (group: GroupView | null) => void;
   onAddShared?: () => void;
 }
 
-export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
+export function GroupPage({ activeGroupId, initialInviteToken, onSelect, onAddShared }: GroupPageProps) {
   const [groups, setGroups] = useState<GroupView[]>([]);
   const [newName, setNewName] = useState("");
   const [inviteToken, setInviteToken] = useState("");
-  const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [createdInvitation, setCreatedInvitation] = useState<{ token: string; url: string | null } | null>(null);
+  const [invitedGroupName, setInvitedGroupName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +44,14 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
     });
   }, [refresh]);
 
+  useEffect(() => {
+    if (!initialInviteToken) return;
+    setInviteToken(initialInviteToken);
+    previewInvitation(initialInviteToken)
+      .then((preview) => setInvitedGroupName(preview.group_name))
+      .catch(() => setError("Приглашение недействительно"));
+  }, [initialInviteToken]);
+
   async function handleCreate(event: FormEvent) {
     event.preventDefault();
     const name = newName.trim();
@@ -54,13 +66,12 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
     }
   }
 
-  async function handleJoin(event: FormEvent) {
-    event.preventDefault();
-    const token = inviteToken.trim();
+  async function joinByToken(token: string) {
     if (!token) return;
     setError(null);
     try {
       await joinGroup(token);
+      setInvitedGroupName(null);
       setInviteToken("");
       await refresh();
     } catch {
@@ -68,10 +79,15 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
     }
   }
 
+  function handleJoin(event: FormEvent) {
+    event.preventDefault();
+    void joinByToken(inviteToken.trim());
+  }
+
   async function handleInvitation(groupId: string) {
     setError(null);
     try {
-      setCreatedToken(await createInvitation(groupId));
+      setCreatedInvitation(await createInvitation(groupId));
     } catch {
       setError("Не удалось создать приглашение");
     }
@@ -83,6 +99,7 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
       await leaveGroup(groupId);
       if (localStorage.getItem(ACTIVE_GROUP_KEY) === groupId) {
         localStorage.removeItem(ACTIVE_GROUP_KEY);
+        onSelect?.(null);
       }
       await refresh();
     } catch {
@@ -96,6 +113,24 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
     <section aria-labelledby="groups-title">
       <h1 id="groups-title">Группы</h1>
       {error && <p role="alert">{error}</p>}
+      {invitedGroupName && (
+        <aside className="notice" aria-label="Приглашение в группу">
+          <p>Вас приглашают в группу «{invitedGroupName}».</p>
+          <button type="button" onClick={() => void joinByToken(inviteToken.trim())}>
+            Вступить по приглашению
+          </button>
+        </aside>
+      )}
+      <button
+        type="button"
+        aria-current={activeGroupId ? undefined : "true"}
+        onClick={() => {
+          localStorage.removeItem(ACTIVE_GROUP_KEY);
+          onSelect?.(null);
+        }}
+      >
+        Учить только личные слова
+      </button>
 
       <form onSubmit={handleCreate}>
         <label>
@@ -117,7 +152,12 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
         <button type="submit">Вступить</button>
       </form>
 
-      {createdToken && <p>Код приглашения: {createdToken}</p>}
+      {createdInvitation && (
+        <div className="notice">
+          <p>Код приглашения: {createdInvitation.token}</p>
+          {createdInvitation.url && <a href={createdInvitation.url}>Открыть ссылку приглашения</a>}
+        </div>
+      )}
 
       {groups.length === 0 ? <p>Пока нет групп</p> : null}
       {groups.map((group) => (
@@ -130,6 +170,7 @@ export function GroupPage({ onSelect, onAddShared }: GroupPageProps) {
           </ul>
           <button
             type="button"
+            aria-current={activeGroupId === group.id ? "true" : undefined}
             onClick={() => {
               localStorage.setItem(ACTIVE_GROUP_KEY, group.id);
               onSelect?.(group);

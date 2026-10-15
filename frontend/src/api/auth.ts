@@ -36,18 +36,19 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   return body as T;
 }
 
-export async function bootstrapAuth(initData: string): Promise<Actor> {
+export async function bootstrapAuth(initData: string): Promise<{ actor: Actor; startParam: string | null }> {
   const response = await apiFetch<{
     access_token: string;
     token_type: "bearer";
     expires_in: number;
     user: Actor;
+    start_param: string | null;
   }>("/api/auth/telegram", {
     method: "POST",
     body: JSON.stringify({ init_data: initData }),
   });
   accessToken = response.access_token;
-  return response.user;
+  return { actor: response.user, startParam: response.start_param };
 }
 
 export function clearSession(): void {

@@ -41,6 +41,10 @@ export function createCard(draft: CardDraft): Promise<CardView> {
   });
 }
 
+export function getCard(cardId: string): Promise<CardView> {
+  return apiFetch<CardView>(`/api/cards/${cardId}`);
+}
+
 export function updateCard(
   cardId: string,
   change: { front: string; back: string; expected_version: number },
