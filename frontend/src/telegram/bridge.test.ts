@@ -6,19 +6,24 @@ afterEach(() => document.documentElement.removeAttribute("style"));
 it("falls back when Telegram text contrast is insufficient", () => {
   applyTelegramTheme({
     colorScheme: "light",
-    themeParams: { bg_color: "#ffffff", text_color: "#fefefe", button_color: "#2A6EC7" },
+    themeParams: { bg_color: "#ffffff", text_color: "#fefefe", button_color: "#214E40" },
   });
 
-  expect(document.documentElement.style.getPropertyValue("--color-text")).toBe("#18222D");
+  expect(document.documentElement.style.getPropertyValue("--color-text")).toBe("#223B31");
+  expect(document.documentElement.style.getPropertyValue("--color-border")).toBe("#E0E6DD");
+  expect(document.documentElement.style.getPropertyValue("--color-highlight")).toBe("#D7F39E");
 });
 
 it("uses accessible semantic rating colors for Telegram dark theme", () => {
   applyTelegramTheme({ colorScheme: "dark" });
 
-  expect(document.documentElement.style.getPropertyValue("--color-again")).toBe("#FF9C95");
-  expect(document.documentElement.style.getPropertyValue("--color-hard")).toBe("#F4C275");
-  expect(document.documentElement.style.getPropertyValue("--color-good")).toBe("#9DC5FF");
-  expect(document.documentElement.style.getPropertyValue("--color-easy")).toBe("#8FE1B2");
+  const style = document.documentElement.style;
+  expect(style.getPropertyValue("--color-again")).toBe("#FFB7AA");
+  expect(style.getPropertyValue("--color-hard")).toBe("#EFCD94");
+  expect(style.getPropertyValue("--color-good")).toBe("#B0D1FA");
+  expect(style.getPropertyValue("--color-easy")).toBe("#B9E3AC");
+  expect(style.getPropertyValue("--color-again-surface")).toBe("#452D29");
+  expect(style.getPropertyValue("--color-selected")).toBe("#31452C");
 });
 
 it("falls back as complete text and button pairs and applies safe area", () => {
@@ -35,13 +40,13 @@ it("falls back as complete text and button pairs and applies safe area", () => {
   });
 
   const style = document.documentElement.style;
-  expect(style.getPropertyValue("--color-background")).toBe("#F6F7F9");
-  expect(style.getPropertyValue("--color-accent")).toBe("#2A6EC7");
+  expect(style.getPropertyValue("--color-background")).toBe("#F9FAF6");
+  expect(style.getPropertyValue("--color-accent")).toBe("#214E40");
   expect(style.getPropertyValue("--safe-top")).toBe("12px");
   expect(style.getPropertyValue("--safe-bottom")).toBe("20px");
 });
 
-it("keeps muted and rating text readable on a custom Telegram surface", () => {
+it("keeps muted text readable while rating pairs stay brand-controlled", () => {
   applyTelegramTheme({
     colorScheme: "light",
     themeParams: {
@@ -53,10 +58,10 @@ it("keeps muted and rating text readable on a custom Telegram surface", () => {
 
   const style = document.documentElement.style;
   expect(style.getPropertyValue("--color-muted")).toBe("#000000");
-  expect(style.getPropertyValue("--color-again")).toBe("#000000");
-  expect(style.getPropertyValue("--color-hard")).toBe("#000000");
-  expect(style.getPropertyValue("--color-good")).toBe("#000000");
-  expect(style.getPropertyValue("--color-easy")).toBe("#000000");
+  expect(style.getPropertyValue("--color-again")).toBe("#A13A36");
+  expect(style.getPropertyValue("--color-hard")).toBe("#855316");
+  expect(style.getPropertyValue("--color-good")).toBe("#285C96");
+  expect(style.getPropertyValue("--color-easy")).toBe("#256447");
 });
 
 it("unsubscribes layout listeners", () => {

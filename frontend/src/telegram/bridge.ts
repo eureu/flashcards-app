@@ -48,8 +48,20 @@ export function requireTelegramInitData(): string {
 }
 
 const FALLBACK = {
-  light: { background: "#F6F7F9", surface: "#FFFFFF", text: "#18222D", muted: "#53616F", accent: "#2A6EC7", accentText: "#FFFFFF", again: "#B42318", hard: "#8A4B00", good: "#1D4ED8", easy: "#166534" },
-  dark: { background: "#17212B", surface: "#202B36", text: "#F3F6FA", muted: "#ADB9C5", accent: "#6AB2F2", accentText: "#17212B", again: "#FF9C95", hard: "#F4C275", good: "#9DC5FF", easy: "#8FE1B2" },
+  light: {
+    background: "#F9FAF6", surface: "#FFFFFF", text: "#223B31", muted: "#68736B",
+    border: "#E0E6DD", subtle: "#EEF1EA", accent: "#214E40", accentText: "#FFFFFF",
+    highlight: "#D7F39E", highlightText: "#253C1C", selected: "#E5EEDF",
+    again: "#A13A36", againSurface: "#FBEBE7", hard: "#855316", hardSurface: "#FBF0D9",
+    good: "#285C96", goodSurface: "#E9F1FB", easy: "#256447", easySurface: "#E7F2E7",
+  },
+  dark: {
+    background: "#17241F", surface: "#203229", text: "#EEF3E8", muted: "#AFBEAD",
+    border: "#37483B", subtle: "#26372C", accent: "#CCE9AA", accentText: "#213B2D",
+    highlight: "#D7F39E", highlightText: "#253C1C", selected: "#31452C",
+    again: "#FFB7AA", againSurface: "#452D29", hard: "#EFCD94", hardSurface: "#413824",
+    good: "#B0D1FA", goodSurface: "#283B50", easy: "#B9E3AC", easySurface: "#2D422F",
+  },
 };
 
 function rgb(hex: string): [number, number, number] | null {
@@ -98,18 +110,28 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
   const muted = sufficient(proposedMuted, background) && sufficient(proposedMuted, surface)
     ? proposedMuted
     : text;
-  const ratingColor = (candidate: string) => sufficient(candidate, surface) ? candidate : text;
   const root = document.documentElement.style;
+  document.documentElement.dataset.theme = scheme;
+  root.setProperty("color-scheme", scheme);
   root.setProperty("--color-background", background);
   root.setProperty("--color-surface", surface);
   root.setProperty("--color-text", text);
   root.setProperty("--color-muted", muted);
+  root.setProperty("--color-border", fallback.border);
+  root.setProperty("--color-subtle", fallback.subtle);
   root.setProperty("--color-accent", accent);
   root.setProperty("--color-accent-text", accentText);
-  root.setProperty("--color-again", ratingColor(fallback.again));
-  root.setProperty("--color-hard", ratingColor(fallback.hard));
-  root.setProperty("--color-good", ratingColor(fallback.good));
-  root.setProperty("--color-easy", ratingColor(fallback.easy));
+  root.setProperty("--color-highlight", fallback.highlight);
+  root.setProperty("--color-highlight-text", fallback.highlightText);
+  root.setProperty("--color-selected", fallback.selected);
+  root.setProperty("--color-again", fallback.again);
+  root.setProperty("--color-again-surface", fallback.againSurface);
+  root.setProperty("--color-hard", fallback.hard);
+  root.setProperty("--color-hard-surface", fallback.hardSurface);
+  root.setProperty("--color-good", fallback.good);
+  root.setProperty("--color-good-surface", fallback.goodSurface);
+  root.setProperty("--color-easy", fallback.easy);
+  root.setProperty("--color-easy-surface", fallback.easySurface);
   root.setProperty("--safe-top", `${theme.safeAreaInset?.top ?? 0}px`);
   root.setProperty("--safe-right", `${theme.safeAreaInset?.right ?? 0}px`);
   root.setProperty("--safe-bottom", `${theme.safeAreaInset?.bottom ?? 0}px`);

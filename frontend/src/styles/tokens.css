@@ -1,14 +1,28 @@
 :root {
-  --color-background: #F6F7F9;
+  color-scheme: light;
+  --color-background: #F9FAF6;
   --color-surface: #FFFFFF;
-  --color-text: #18222D;
-  --color-muted: #53616F;
-  --color-accent: #2A6EC7;
+  --color-text: #223B31;
+  --color-muted: #68736B;
+  --color-border: #E0E6DD;
+  --color-subtle: #EEF1EA;
+  --color-accent: #214E40;
   --color-accent-text: #FFFFFF;
-  --color-again: #B42318;
-  --color-hard: #8A4B00;
-  --color-good: #1D4ED8;
-  --color-easy: #166534;
+  --color-highlight: #D7F39E;
+  --color-highlight-text: #253C1C;
+  --color-selected: #E5EEDF;
+  --color-again: #A13A36;
+  --color-again-surface: #FBEBE7;
+  --color-hard: #855316;
+  --color-hard-surface: #FBF0D9;
+  --color-good: #285C96;
+  --color-good-surface: #E9F1FB;
+  --color-easy: #256447;
+  --color-easy-surface: #E7F2E7;
+  --shadow-card: 0 16px 40px rgb(34 59 49 / 7%);
+  --radius-small: 12px;
+  --radius-control: 15px;
+  --radius-card: 25px;
   --safe-top: 0px;
   --safe-right: 0px;
   --safe-bottom: 0px;
@@ -17,15 +31,26 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-background: #17212B;
-    --color-surface: #202B36;
-    --color-text: #F3F6FA;
-    --color-muted: #ADB9C5;
-    --color-accent: #6AB2F2;
-    --color-accent-text: #17212B;
-    --color-again: #FF9C95;
-    --color-hard: #F4C275;
-    --color-good: #9DC5FF;
-    --color-easy: #8FE1B2;
+    color-scheme: dark;
+    --color-background: #17241F;
+    --color-surface: #203229;
+    --color-text: #EEF3E8;
+    --color-muted: #AFBEAD;
+    --color-border: #37483B;
+    --color-subtle: #26372C;
+    --color-accent: #CCE9AA;
+    --color-accent-text: #213B2D;
+    --color-highlight: #D7F39E;
+    --color-highlight-text: #253C1C;
+    --color-selected: #31452C;
+    --color-again: #FFB7AA;
+    --color-again-surface: #452D29;
+    --color-hard: #EFCD94;
+    --color-hard-surface: #413824;
+    --color-good: #B0D1FA;
+    --color-good-surface: #283B50;
+    --color-easy: #B9E3AC;
+    --color-easy-surface: #2D422F;
+    --shadow-card: 0 16px 40px rgb(0 0 0 / 18%);
   }
 }
