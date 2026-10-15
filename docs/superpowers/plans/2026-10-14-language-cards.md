@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Создать Telegram Mini App, где друзья повторяют общий набор слов и личные карточки, а общие карточки добавляет только Telegram-пользователь `1568151709`.
+**Goal:** Создать Telegram Mini App, где друзья повторяют общий набор слов и личные карточки, а общие карточки добавляют только Telegram-пользователи `1568151709` и `735056285`.
 
 **Architecture:** Один Python/FastAPI backend хранит данные в PostgreSQL и рассчитывает повторения через FSRS. React/TypeScript показывает мобильный интерфейс, собирается в статические файлы и обслуживается с одного origin с API. Docker Compose запускает приложение и базу; тестовое окружение изолировано от пользовательских данных.
 
@@ -15,7 +15,7 @@
 ## Global Constraints
 
 - Выбран первый вариант: Python/FastAPI + React/TypeScript, PostgreSQL и Docker.
-- Новые общие карточки добавляет только аккаунт с жёстко заданным Telegram user ID `1568151709`; он должен состоять в целевой группе.
+- Новые общие карточки добавляют только аккаунты с жёстко заданными Telegram user ID `1568151709` и `735056285`; каждый должен состоять в целевой группе.
 - Автор редактирует свои общие карточки, пока состоит в группе; создатель группы может редактировать и удалять любые общие карточки. Создатель не получает право добавления автоматически.
 - Личные карточки каждый пользователь добавляет и изменяет для себя.
 - У учебной группы общий набор карточек. Прогресс и расписание повторений индивидуальны.
@@ -113,13 +113,13 @@ def test_tampered_init_data_is_rejected(client, signed_init_data):
 - [ ] **5. Проверить результат.** Повторить pytest из шага 2: PASS. `docker compose -f compose.test.yaml run --build --rm web-test npm test -- --run src/api/auth.test.ts`: PASS. `/api/me` без токена возвращает 401, `/api/health` — 200; неизвестный `/api`-маршрут — 404.
 - [ ] **6. Зафиксировать изменения.** Если Git всё ещё отсутствует, инициализировать его в корне проекта после проверки границы каталога; учесть sandbox-разрешения. Добавить только созданные исходники, lock-файлы и документацию, исключить секреты. Коммит: `feat: bootstrap app and Telegram authentication`.
 
-### Task 2: Группы, приглашения и единственный издатель
+### Task 2: Группы, приглашения и фиксированные издатели
 
 **Files:** создать `backend/app/groups/{models,schemas,policy,service,routes}.py`, `backend/migrations/versions/0002_groups.py`, `backend/tests/groups/test_policy.py`, `test_membership.py`, `test_invitations.py`; создать `frontend/src/api/groups.ts`, `frontend/src/features/groups/GroupPage.tsx`, `GroupPage.test.tsx`; изменить регистрацию маршрутов и UI-навигацию.
 
 **Interfaces:**
 - Consumes: Actor, Session, `get_current_actor`, DomainError и часы из задачи 1.
-- Produces: `SHARED_CARD_PUBLISHER_TELEGRAM_ID: int = 1568151709`; `can_publish_shared(telegram_id: int, is_member: bool) -> bool` в `groups/policy.py`.
+- Produces: `SHARED_CARD_PUBLISHER_TELEGRAM_IDS: frozenset[int] = frozenset({1568151709, 735056285})`; `can_publish_shared(telegram_id: int, is_member: bool) -> bool` в `groups/policy.py`.
 - Produces: `require_membership(db: Session, actor: Actor, group_id: UUID) -> Membership`, `create_group(db: Session, actor: Actor, name: str) -> GroupView`, `join_group(db: Session, actor: Actor, token: str) -> GroupView`.
 - Routes: `GET/POST /api/groups`, `GET /api/groups/{group_id}`, `POST /api/groups/{group_id}/invitation`, `GET /api/invitations/{token}`, `POST /api/invitations/{token}/join`, `DELETE /api/groups/{group_id}/membership`.
 - `GroupView`: `id`, `name`, `owner_id`, `is_owner`, `can_add_shared`, список участников с `user_id` и `display_name`. Только создатель выпускает/заменяет приглашение; только текущие участники получают подробности группы.
@@ -133,7 +133,9 @@ from app.groups.policy import can_publish_shared
 
 @pytest.mark.parametrize("telegram_id,is_member,expected", [
     (1568151709, True, True),
+    (735056285, True, True),
     (1568151709, False, False),
+    (735056285, False, False),
     (2000000001, True, False),
     (2000000002, True, False),
 ])
@@ -262,7 +264,7 @@ it("shows only the two text sides after reveal", () => {
 **Interfaces:**
 - Consumes: все HTTP-контракты, миграции и UI из задач 1–6.
 - Produces: Docker-образ с готовым UI и API, команды запуска и миграций, проверенные сценарии AC01–AC19 и отчёт о фактических результатах.
-- E2E-контур: отдельные сервисы `api-e2e` и `browser-test`, тестовая БД и известный только тестовому окружению бот-токен. Playwright подставляет подписанные тестовые initData в Telegram bridge; production API не содержит bypass-эндпоинта. Издатель в сценариях — `1568151709`, второй участник — `2000000001`, другой создатель — `2000000002`.
+- E2E-контур: отдельные сервисы `api-e2e` и `browser-test`, тестовая БД и известный только тестовому окружению бот-токен. Playwright подставляет подписанные тестовые initData в Telegram bridge; production API не содержит bypass-эндпоинта. Первый разрешённый издатель в базовых сценариях — `1568151709`, второй разрешённый издатель в API-регрессии — `735056285`, обычный участник — `2000000001`, другой создатель — `2000000002`.
 
 - [ ] **1. Создать сквозные сценарии.** Издатель создаёт группу и импортирует `Purpose - цель`, `Receive - получать/принимать`, повтор `Provision`, строку без разделителя. Второй участник вступает, видит общий набор, добавляет личную пару, повторяет оба направления. Проверить независимость прогресса, закрытость личных карточек и отказ второму создателю в групповом добавлении через UI и API.
 - [ ] **2. Проверить первоначальное выполнение сценариев.** `docker compose -f compose.test.yaml run --build --rm browser-test npm run test:e2e`. Ожидается либо выявление конкретной интеграционной ошибки, либо PASS, если реализация уже соответствует сценариям; не создавать искусственный сбой ради красного результата.
