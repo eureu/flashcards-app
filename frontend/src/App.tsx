@@ -67,11 +67,13 @@ export function App() {
 
   return (
     <main className="app-shell">
-      <p className="muted">{actor.display_name}</p>
       {section === "study" && (
         <StudyHome
+          displayName={actor.display_name}
           groupId={activeGroup?.id}
           groupName={activeGroup?.name}
+          onAddWords={() => setSection("words")}
+          onChooseGroup={() => setSection("groups")}
           onStart={() => setReviewing(true)}
         />
       )}
