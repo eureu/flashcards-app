@@ -33,6 +33,7 @@ it("does not offer the shared target to an ordinary member", async () => {
   render(<WordListPage groupId={sharedCard.group_id} canAddShared={false} />);
   await screen.findByText("Purpose");
 
+  fireEvent.click(screen.getByRole("button", { name: "Добавить слова" }));
   fireEvent.click(screen.getByRole("button", { name: "Добавить слово" }));
 
   expect(screen.queryByRole("option", { name: "Общие слова группы" })).toBeNull();
@@ -43,6 +44,7 @@ it("allows the fixed publisher to create a shared card", async () => {
   api.createCard.mockResolvedValue(sharedCard);
   render(<WordListPage groupId={sharedCard.group_id} canAddShared={true} />);
   await screen.findByText("Purpose");
+  fireEvent.click(screen.getByRole("button", { name: "Добавить слова" }));
   fireEvent.click(screen.getByRole("button", { name: "Добавить слово" }));
   fireEvent.change(screen.getByLabelText("Куда добавить"), { target: { value: "group" } });
   fireEvent.change(screen.getByLabelText("Слово или фраза"), { target: { value: "Carry" } });
@@ -82,14 +84,41 @@ it("labels shared and personal cards and names ownership in delete confirmation"
     can_delete: true,
   };
   api.listCards.mockResolvedValue([sharedCard, personalCard]);
-  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
   render(<WordListPage groupId={sharedCard.group_id} canAddShared={false} />);
 
   expect(await screen.findByText("Общая")).toBeInTheDocument();
   expect(screen.getByText("Личная")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Удалить Grace" }));
-  expect(confirm).toHaveBeenCalledWith("Удалить личную карточку «Grace — благодать»?");
-  confirm.mockRestore();
+  expect(screen.getByRole("dialog")).toHaveTextContent("Удалить личную карточку «Grace — благодать»?");
+  fireEvent.click(screen.getByRole("button", { name: "Отмена" }));
+  expect(api.deleteCard).not.toHaveBeenCalled();
+});
+
+it("uses compact filter tabs and can clear a submitted search", async () => {
+  render(<WordListPage groupId={sharedCard.group_id} canAddShared={false} />);
+  await screen.findByText("Purpose");
+
+  fireEvent.click(screen.getByRole("button", { name: "Общие" }));
+  await waitFor(() => expect(api.listCards).toHaveBeenLastCalledWith({
+    groupId: sharedCard.group_id,
+    filter: "shared",
+    query: "",
+  }));
+  expect(screen.getByRole("button", { name: "Общие" })).toHaveAttribute("aria-pressed", "true");
+
+  fireEvent.change(screen.getByLabelText("Поиск по словам и переводам"), { target: { value: "цель" } });
+  fireEvent.submit(screen.getByRole("search"));
+  await waitFor(() => expect(api.listCards).toHaveBeenLastCalledWith({
+    groupId: sharedCard.group_id,
+    filter: "shared",
+    query: "цель",
+  }));
+  fireEvent.click(screen.getByRole("button", { name: "Очистить поиск" }));
+  await waitFor(() => expect(api.listCards).toHaveBeenLastCalledWith({
+    groupId: sharedCard.group_id,
+    filter: "shared",
+    query: "",
+  }));
 });
 
 it("keeps edited text visible after a version conflict", async () => {

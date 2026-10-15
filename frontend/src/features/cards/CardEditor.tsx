@@ -80,7 +80,8 @@ export function CardEditor({
   }
 
   return (
-    <form onSubmit={submit}>
+    <form className="card-editor" onSubmit={submit}>
+      <header><p className="eyebrow">Карточка</p><h2>{card ? "Изменить пару" : "Новая пара"}</h2></header>
       {!card && (
         <label>
           Куда добавить
@@ -120,10 +121,10 @@ export function CardEditor({
           Загрузить актуальную версию
         </button>
       )}
-      <button type="submit" disabled={saving || !front.trim() || !back.trim()}>
+      <button className="button" type="submit" disabled={saving || !front.trim() || !back.trim()}>
         {saving ? "Сохраняем…" : "Сохранить"}
       </button>
-      <button type="button" onClick={onCancel}>Отмена</button>
+      <button className="secondary-button" type="button" onClick={onCancel}>Отмена</button>
     </form>
   );
 }

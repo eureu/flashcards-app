@@ -1,5 +1,8 @@
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { CardView, deleteCard, listCards } from "../../api/cards";
+import { ActionSheet } from "../../components/ActionSheet";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { Icon } from "../../components/Icon";
 import { CardEditor } from "./CardEditor";
 import { ImportPage } from "../imports/ImportPage";
 
@@ -8,16 +11,22 @@ interface WordListPageProps {
   canAddShared: boolean;
 }
 
+type CardFilter = "all" | "shared" | "personal";
+
 export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
   const [cards, setCards] = useState<CardView[]>([]);
-  const [filter, setFilter] = useState<"all" | "shared" | "personal">("all");
+  const [filter, setFilter] = useState<CardFilter>("all");
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<CardView | "new" | null>(null);
   const [importing, setImporting] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [deleting, setDeleting] = useState<CardView | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   const refresh = useCallback(async () => {
+    setError(null);
     const next = await listCards({ groupId, filter, query });
     setCards(next);
   }, [filter, groupId, query]);
@@ -31,11 +40,16 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
     setQuery(queryInput.trim());
   }
 
-  async function remove(card: CardView) {
-    const ownership = card.visibility === "group" ? "общую" : "личную";
-    if (!window.confirm(`Удалить ${ownership} карточку «${card.front} — ${card.back}»?`)) return;
+  function clearSearch() {
+    setQueryInput("");
+    setQuery("");
+  }
+
+  async function confirmRemove() {
+    if (!deleting) return;
     try {
-      await deleteCard(card.id, card.version);
+      await deleteCard(deleting.id, deleting.version);
+      setDeleting(null);
       await refresh();
     } catch {
       setError("Не удалось удалить карточку");
@@ -47,69 +61,111 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
     await refresh();
   }
 
+  function openSingle() {
+    setImporting(false);
+    setEditing("new");
+    setAddOpen(false);
+  }
+
+  function openImport() {
+    setEditing(null);
+    setImporting(true);
+    setAddOpen(false);
+  }
+
   return (
-    <section aria-labelledby="dictionary-title">
-      <h1 id="dictionary-title">Слова</h1>
-      {error && <p role="alert">{error}</p>}
-      <form onSubmit={search}>
-        <label>
-          Поиск
-          <input value={queryInput} onChange={(event) => setQueryInput(event.target.value)} />
-        </label>
-        <button type="submit">Найти</button>
+    <section className="dictionary" aria-labelledby="dictionary-title">
+      <header className="page-heading">
+        <div><p className="eyebrow">Ваш набор</p><h1 id="dictionary-title">Слова</h1></div>
+        <button ref={addButtonRef} aria-label="Добавить слова" className="add-button" onClick={() => setAddOpen(true)} type="button">
+          <Icon name="plus" size={22} />
+        </button>
+      </header>
+
+      {error && <p className="notice notice--error" role="alert">{error}</p>}
+
+      <form className="search-box" onSubmit={search} role="search">
+        <Icon name="search" size={18} />
+        <label className="visually-hidden" htmlFor="dictionary-search">Поиск по словам и переводам</label>
+        <input
+          id="dictionary-search"
+          placeholder="Найти слово или перевод"
+          value={queryInput}
+          onChange={(event) => setQueryInput(event.target.value)}
+        />
+        {queryInput && <button aria-label="Очистить поиск" onClick={clearSearch} type="button"><Icon name="close" size={16} /></button>}
+        <button className="visually-hidden" type="submit">Найти</button>
       </form>
+
       {groupId && (
-        <label>
-          Фильтр
-          <select
-            value={filter}
-            onChange={(event) =>
-              setFilter(event.target.value as "all" | "shared" | "personal")
-            }
-          >
-            <option value="all">Все слова</option>
-            <option value="shared">Общие</option>
-            <option value="personal">Мои</option>
-          </select>
-        </label>
+        <div className="filter-tabs" aria-label="Фильтр слов">
+          {([['all', 'Все'], ['shared', 'Общие'], ['personal', 'Личные']] as Array<[CardFilter, string]>).map(([value, label]) => (
+            <button aria-pressed={filter === value} key={value} onClick={() => setFilter(value)} type="button">{label}</button>
+          ))}
+        </div>
       )}
-      <button type="button" onClick={() => setEditing("new")}>Добавить слово</button>
-      <button type="button" onClick={() => setImporting((value) => !value)}>
-        Добавить списком
-      </button>
-      {importing && <ImportPage groupId={groupId} canAddShared={canAddShared} />}
+
+      {importing && (
+        <div className="work-panel">
+          <button className="panel-close" onClick={() => setImporting(false)} type="button">Закрыть импорт</button>
+          <ImportPage groupId={groupId} canAddShared={canAddShared} />
+        </div>
+      )}
 
       {editing && (
-        <CardEditor
-          card={editing === "new" ? undefined : editing}
-          groupId={groupId}
-          canAddShared={canAddShared}
-          onSaved={saved}
-          onCancel={() => setEditing(null)}
-        />
+        <div className="work-panel">
+          <CardEditor
+            card={editing === "new" ? undefined : editing}
+            groupId={groupId}
+            canAddShared={canAddShared}
+            onSaved={saved}
+            onCancel={() => setEditing(null)}
+          />
+        </div>
       )}
 
-      {cards.length === 0 ? <p>Слов пока нет</p> : null}
-      <ul>
-        {cards.map((card) => (
-          <li key={card.id}>
-            <span>{card.front}</span>
-            <span> — {card.back}</span>
-            {" · "}
-            <span className="muted">{card.visibility === "group" ? "Общая" : "Личная"}</span>
-            {card.can_edit && (
-              <button type="button" aria-label={`Изменить ${card.front}`} onClick={() => setEditing(card)}>
-                Изменить
-              </button>
-            )}
-            {card.can_delete && (
-              <button type="button" aria-label={`Удалить ${card.front}`} onClick={() => void remove(card)}>
-                Удалить
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {!importing && !editing && cards.length === 0 && (
+        <div className="dictionary-empty">
+          <p>{query ? "Ничего не найдено" : "Слов пока нет"}</p>
+          <span>{query ? "Измените запрос или очистите поиск." : "Добавьте первую пару или вставьте готовый список."}</span>
+        </div>
+      )}
+
+      {!importing && !editing && cards.length > 0 && (
+        <ul className="word-list">
+          {cards.map((card) => (
+            <li className="word-row" key={card.id}>
+              <div className="word-row__copy">
+                <strong>{card.front}</strong>
+                <span>{card.back}</span>
+              </div>
+              <div className="word-row__scope">
+                <span className="scope-label"><Icon name={card.visibility === "group" ? "groups" : "lock"} size={13} />{card.visibility === "group" ? "Общая" : "Личная"}</span>
+                <div className="word-row__actions">
+                  {card.can_edit && (
+                    <button type="button" aria-label={`Изменить ${card.front}`} onClick={() => setEditing(card)}><Icon name="edit" size={17} /></button>
+                  )}
+                  {card.can_delete && (
+                    <button type="button" aria-label={`Удалить ${card.front}`} onClick={() => setDeleting(card)}><Icon name="trash" size={17} /></button>
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <ActionSheet open={addOpen} onClose={() => setAddOpen(false)} returnFocusRef={addButtonRef} title="Добавить слова">
+        <button onClick={openImport} type="button"><span className="sheet-action__icon"><Icon name="list" size={21} /></span><span><strong>Вставить список</strong><small>Несколько пар за один раз</small></span><Icon name="chevron" size={18} /></button>
+        <button aria-label="Добавить слово" onClick={openSingle} type="button"><span className="sheet-action__icon"><Icon name="plus" size={21} /></span><span><strong>Добавить одну пару</strong><small>Слово и перевод вручную</small></span><Icon name="chevron" size={18} /></button>
+      </ActionSheet>
+
+      {deleting && (
+        <ConfirmDialog onCancel={() => setDeleting(null)} onConfirm={() => void confirmRemove()}>
+          <h2>Удалить карточку?</h2>
+          <p>Удалить {deleting.visibility === "group" ? "общую" : "личную"} карточку «{deleting.front} — {deleting.back}»?</p>
+        </ConfirmDialog>
+      )}
     </section>
   );
 }
