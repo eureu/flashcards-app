@@ -41,6 +41,9 @@ it("does not offer shared publishing to an ordinary group owner", async () => {
   expect(await screen.findByRole("heading", { name: "Friends" })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Добавить общие слова" })).toBeNull();
   expect(screen.getByRole("button", { name: "Создать приглашение" })).toBeInTheDocument();
+  expect(screen.getByText("Создатель")).toBeInTheDocument();
+  expect(screen.getByText("1 участник")).toBeInTheDocument();
+  expect(screen.queryByText(/точность|серия|прогресс/i)).toBeNull();
 });
 
 it("creates a trimmed group and refreshes the server-backed list", async () => {
@@ -103,6 +106,7 @@ it("clears the active group in the parent after leaving it", async () => {
 
   render(<GroupPage activeGroupId={memberGroup.id} onSelect={onSelect} />);
   fireEvent.click(await screen.findByRole("button", { name: "Выйти из группы" }));
+  fireEvent.click(screen.getByRole("button", { name: "Выйти", exact: true }));
 
   await waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
   expect(localStorage.getItem("active-group-id")).toBeNull();

@@ -34,7 +34,17 @@ beforeEach(() => {
 it("does not offer group import to a nonpublisher", () => {
   render(<ImportPage groupId="group-1" canAddShared={false} />);
 
-  expect(screen.queryByRole("option", { name: "Общие слова группы" })).toBeNull();
+  expect(screen.getByText("Только мне")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "В группу" })).toBeNull();
+  expect(screen.queryByRole("combobox", { name: "Куда добавить" })).toBeNull();
+});
+
+it("offers a segmented group destination only to the publisher", () => {
+  render(<ImportPage groupId="group-1" canAddShared={true} />);
+
+  expect(screen.getByRole("button", { name: "Только мне" })).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: "В группу" }));
+  expect(screen.getByRole("button", { name: "В группу" })).toHaveAttribute("aria-pressed", "true");
 });
 
 it("keeps an invalid source row visible and blocks commit", async () => {
@@ -54,6 +64,26 @@ it("keeps an invalid source row visible and blocks commit", async () => {
   expect(await screen.findByText("строка без разделителя")).toBeInTheDocument();
   expect(screen.getByText("Не найден разделитель")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Добавить/ })).toBeNull();
+});
+
+it("labels valid, duplicate and invalid preview rows without relying on color", async () => {
+  api.previewImport.mockResolvedValue({
+    rows: [
+      validPreview.rows[0],
+      { ...validPreview.rows[0], row_id: 2, original: "Purpose - цель", duplicate: true, selected: false },
+      { ...validPreview.rows[0], row_id: 3, original: "без разделителя", front: null, back: null, error: "Не найден разделитель", selected: false },
+    ],
+    selected_count: 1,
+    error_count: 1,
+    confirmation_token: null,
+  });
+  render(<ImportPage canAddShared={false} />);
+  fireEvent.change(screen.getByLabelText("Список слов"), { target: { value: "три строки" } });
+  fireEvent.click(screen.getByRole("button", { name: "Проверить список" }));
+
+  expect(await screen.findByText("Готово")).toBeInTheDocument();
+  expect(screen.getByText("Повтор")).toBeInTheDocument();
+  expect(screen.getByText("Ошибка")).toBeInTheDocument();
 });
 
 it("reuses the operation key after a network failure", async () => {
