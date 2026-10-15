@@ -52,17 +52,27 @@ export function App() {
     return unsubscribe;
   }, []);
 
+  function leaveReview(nextSection?: AppSection) {
+    setReviewing(false);
+    if (nextSection) setSection(nextSection);
+    void listGroups().then((groups) => {
+      if (activeGroup && !groups.some((group) => group.id === activeGroup.id)) {
+        localStorage.removeItem("active-group-id");
+        setActiveGroup(null);
+      }
+    });
+  }
+
   if (!actor) return <main className="app-shell">{message}</main>;
   if (reviewing) {
-    return <ReviewPage groupId={activeGroup?.id} onExit={() => {
-      setReviewing(false);
-      void listGroups().then((groups) => {
-        if (activeGroup && !groups.some((group) => group.id === activeGroup.id)) {
-          localStorage.removeItem("active-group-id");
-          setActiveGroup(null);
-        }
-      });
-    }} />;
+    return (
+      <ReviewPage
+        groupId={activeGroup?.id}
+        onAddWords={() => leaveReview("words")}
+        onExit={() => leaveReview()}
+        onOpenWords={() => leaveReview("words")}
+      />
+    );
   }
 
   return (

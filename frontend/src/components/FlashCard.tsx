@@ -15,7 +15,7 @@ export function FlashCard({ question, answer, revealed, onReveal }: FlashCardPro
 
   return (
     <div
-      className="flash-card"
+      className={`flash-card ${revealed ? "flash-card--revealed" : ""}`.trim()}
       data-testid="flash-card"
       role="button"
       tabIndex={0}

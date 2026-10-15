@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type IconName = "study" | "words" | "groups" | "chevron" | "plus" | "spark";
+export type IconName = "study" | "words" | "groups" | "chevron" | "plus" | "spark" | "close";
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
   name: IconName;
@@ -47,6 +47,7 @@ export function Icon({ name, size = 22, className = "", ...props }: IconProps) {
       )}
       {name === "chevron" && <path {...common} d="m9 6 6 6-6 6" />}
       {name === "plus" && <path {...common} d="M12 5v14M5 12h14" />}
+      {name === "close" && <path {...common} d="m6 6 12 12M18 6 6 18" />}
       {name === "spark" && (
         <g {...common}>
           <path d="M12 3c.5 4.1 2.7 6.4 7 7-4.3.6-6.5 2.9-7 7-.5-4.1-2.7-6.4-7-7 4.3-.6 6.5-2.9 7-7Z" />

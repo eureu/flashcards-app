@@ -33,6 +33,33 @@ it("keeps ratings outside the card and answer hidden until reveal", async () => 
 
   expect(screen.getByText("цель")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Легко" })).toBeInTheDocument();
+  expect(screen.getByText("Без усилий")).toBeInTheDocument();
+  expect(within(card).queryByText("Без усилий")).toBeNull();
+});
+
+it("lets the learner finish from the review header", async () => {
+  const onExit = vi.fn();
+  render(<ReviewPage onExit={onExit} />);
+
+  await screen.findByTestId("flash-card");
+  fireEvent.click(screen.getByRole("button", { name: "Закончить" }));
+
+  expect(onExit).toHaveBeenCalledOnce();
+});
+
+it("offers dictionary and add-word actions when the queue is empty", async () => {
+  api.getNextItem.mockResolvedValue(null);
+  const onOpenWords = vi.fn();
+  const onAddWords = vi.fn();
+  render(<ReviewPage onAddWords={onAddWords} onExit={vi.fn()} onOpenWords={onOpenWords} />);
+
+  expect(await screen.findByRole("heading", { name: "На сейчас всё." })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "К словам" }));
+  fireEvent.click(screen.getByRole("button", { name: "Добавить слова" }));
+
+  expect(onOpenWords).toHaveBeenCalledOnce();
+  expect(onAddWords).toHaveBeenCalledOnce();
+  expect(screen.queryByText(/минут|серия|дней/i)).toBeNull();
 });
 
 it("double tap cannot rate the next item", async () => {
