@@ -64,6 +64,71 @@ test("два одновременных изменения карточки да
   await client.dispose();
 });
 
+test("две одновременные оценки одного задания дают один конфликт состояния", async ({ baseURL }) => {
+  const userId = 2160000000 + (Date.now() % 1000000);
+  const client = await request.newContext({ baseURL });
+  const auth = await client.post("/api/auth/telegram", {
+    data: { init_data: signedInitData(userId, "Конкурентная оценка") },
+  });
+  const token = (await auth.json()).access_token as string;
+  const headers = { Authorization: `Bearer ${token}` };
+  const created = await client.post("/api/cards", {
+    headers,
+    data: { target: { visibility: "personal" }, front: "Race", back: "Гонка" },
+  });
+  const card = await created.json();
+  const command = {
+    card_id: card.id,
+    direction: "en_ru",
+    rating: 1,
+    group_id: null,
+    expected_content_version: card.version,
+    expected_state_version: 0,
+  };
+
+  const responses = await Promise.all([
+    client.post("/api/learning/reviews", {
+      headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+      data: command,
+    }),
+    client.post("/api/learning/reviews", {
+      headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+      data: command,
+    }),
+  ]);
+
+  expect(responses.map((response) => response.status()).sort()).toEqual([200, 409]);
+  await client.dispose();
+});
+
+test("Telegram start_param сразу открывает приглашение в группу", async ({ page, baseURL }) => {
+  await installTelegram(page, 2180000001, "Приглашённый");
+  await page.route("**/api/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/api/auth/telegram") {
+      return route.fulfill({
+        json: {
+          access_token: "invite",
+          token_type: "bearer",
+          expires_in: 3600,
+          user: { user_id: "u", telegram_id: 2180000001, display_name: "Приглашённый" },
+          start_param: "invite-token",
+        },
+      });
+    }
+    if (path === "/api/groups") return route.fulfill({ json: [] });
+    if (path === "/api/invitations/invite-token") {
+      return route.fulfill({ json: { group_name: "Friends" } });
+    }
+    return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", message: "Нет", details: {} } } });
+  });
+
+  await page.goto(baseURL!);
+
+  await expect(page.getByText("Вас приглашают в группу «Friends»." )).toBeVisible();
+  await expect(page.getByRole("button", { name: "Группы" })).toHaveAttribute("aria-current", "page");
+});
+
 test("потерянный после commit ответ повторяется тем же ключом", async ({ page, baseURL }) => {
   const userId = 2170000000 + (Date.now() % 1000000);
   const client = await request.newContext({ baseURL });

@@ -41,6 +41,7 @@ export function App() {
       .then(async ({ actor: nextActor, startParam: nextStartParam }) => {
         setActor(nextActor);
         setStartParam(nextStartParam);
+        if (nextStartParam) setSection("groups");
         const groups = await listGroups();
         const saved = localStorage.getItem("active-group-id");
         const selected = groups.find((group) => group.id === saved) ?? null;

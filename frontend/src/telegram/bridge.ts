@@ -94,17 +94,22 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
     accent = fallback.accent;
     accentText = fallback.accentText;
   }
+  const proposedMuted = params.hint_color ?? fallback.muted;
+  const muted = sufficient(proposedMuted, background) && sufficient(proposedMuted, surface)
+    ? proposedMuted
+    : text;
+  const ratingColor = (candidate: string) => sufficient(candidate, surface) ? candidate : text;
   const root = document.documentElement.style;
   root.setProperty("--color-background", background);
   root.setProperty("--color-surface", surface);
   root.setProperty("--color-text", text);
-  root.setProperty("--color-muted", params.hint_color && sufficient(params.hint_color, background) && sufficient(params.hint_color, surface) ? params.hint_color : fallback.muted);
+  root.setProperty("--color-muted", muted);
   root.setProperty("--color-accent", accent);
   root.setProperty("--color-accent-text", accentText);
-  root.setProperty("--color-again", fallback.again);
-  root.setProperty("--color-hard", fallback.hard);
-  root.setProperty("--color-good", fallback.good);
-  root.setProperty("--color-easy", fallback.easy);
+  root.setProperty("--color-again", ratingColor(fallback.again));
+  root.setProperty("--color-hard", ratingColor(fallback.hard));
+  root.setProperty("--color-good", ratingColor(fallback.good));
+  root.setProperty("--color-easy", ratingColor(fallback.easy));
   root.setProperty("--safe-top", `${theme.safeAreaInset?.top ?? 0}px`);
   root.setProperty("--safe-right", `${theme.safeAreaInset?.right ?? 0}px`);
   root.setProperty("--safe-bottom", `${theme.safeAreaInset?.bottom ?? 0}px`);
@@ -113,11 +118,10 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
 
 export function subscribeTelegramLayout(onChange: () => void): () => void {
   const webApp = getTelegramWebApp();
-  webApp?.onEvent?.("viewportChanged", onChange);
-  webApp?.onEvent?.("themeChanged", onChange);
+  const events = ["viewportChanged", "themeChanged", "safeAreaChanged", "contentSafeAreaChanged"];
+  events.forEach((event) => webApp?.onEvent?.(event, onChange));
   return () => {
-    webApp?.offEvent?.("viewportChanged", onChange);
-    webApp?.offEvent?.("themeChanged", onChange);
+    events.forEach((event) => webApp?.offEvent?.(event, onChange));
   };
 }
 

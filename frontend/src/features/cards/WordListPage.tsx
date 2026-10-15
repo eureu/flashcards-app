@@ -33,7 +33,7 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
 
   async function remove(card: CardView) {
     const ownership = card.visibility === "group" ? "общую" : "личную";
-    if (!window.confirm(`Удалить ${ownership} карточку «${card.front}»?`)) return;
+    if (!window.confirm(`Удалить ${ownership} карточку «${card.front} — ${card.back}»?`)) return;
     try {
       await deleteCard(card.id, card.version);
       await refresh();

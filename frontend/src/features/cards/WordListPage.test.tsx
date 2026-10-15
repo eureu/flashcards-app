@@ -88,7 +88,7 @@ it("labels shared and personal cards and names ownership in delete confirmation"
   expect(await screen.findByText("Общая")).toBeInTheDocument();
   expect(screen.getByText("Личная")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Удалить Grace" }));
-  expect(confirm).toHaveBeenCalledWith("Удалить личную карточку «Grace»?");
+  expect(confirm).toHaveBeenCalledWith("Удалить личную карточку «Grace — благодать»?");
   confirm.mockRestore();
 });
 

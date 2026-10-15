@@ -26,9 +26,9 @@ Volume пользовательской базы эти команды не за
 ## Фактический результат 15 октября 2026
 
 - Backend в Python 3.13 Docker: `69 passed`; одно предупреждение об устаревающем alias Starlette/AnyIO, не влияющее на выполнение.
-- Frontend в Node 24 Docker: `29 passed`.
+- Frontend в Node 24 Docker: `30 passed`.
 - Production-сборка React/Vite: успешно.
-- Playwright/Chromium: `8 passed`, включая функциональный, recovery и визуальные сценарии, реальную потерю ответа после commit с повтором того же ключа и конкурентное изменение карточки в PostgreSQL.
+- Playwright/Chromium: `10 passed`, включая функциональный, recovery и визуальные сценарии, открытие приглашения по `start_param`, реальную потерю ответа после commit с повтором того же ключа, конкурентное изменение карточки и конкурентную оценку одного задания в PostgreSQL.
 - Перезапуск: seed и verify подтвердили ту же карточку, `StudyState` версии 1, срок следующего показа и одно событие повторения после restart API прямой проверкой PostgreSQL.
 - Compose-конфигурации: валидны.
 - `npm audit`: `0 vulnerabilities`.

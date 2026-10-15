@@ -41,6 +41,24 @@ it("falls back as complete text and button pairs and applies safe area", () => {
   expect(style.getPropertyValue("--safe-bottom")).toBe("20px");
 });
 
+it("keeps muted and rating text readable on a custom Telegram surface", () => {
+  applyTelegramTheme({
+    colorScheme: "light",
+    themeParams: {
+      bg_color: "#777777",
+      secondary_bg_color: "#777777",
+      text_color: "#000000",
+    },
+  });
+
+  const style = document.documentElement.style;
+  expect(style.getPropertyValue("--color-muted")).toBe("#000000");
+  expect(style.getPropertyValue("--color-again")).toBe("#000000");
+  expect(style.getPropertyValue("--color-hard")).toBe("#000000");
+  expect(style.getPropertyValue("--color-good")).toBe("#000000");
+  expect(style.getPropertyValue("--color-easy")).toBe("#000000");
+});
+
 it("unsubscribes layout listeners", () => {
   const onEvent = vi.fn();
   const offEvent = vi.fn();
@@ -51,5 +69,9 @@ it("unsubscribes layout listeners", () => {
   unsubscribe();
 
   expect(onEvent).toHaveBeenCalledWith("viewportChanged", callback);
+  expect(onEvent).toHaveBeenCalledWith("safeAreaChanged", callback);
+  expect(onEvent).toHaveBeenCalledWith("contentSafeAreaChanged", callback);
   expect(offEvent).toHaveBeenCalledWith("viewportChanged", callback);
+  expect(offEvent).toHaveBeenCalledWith("safeAreaChanged", callback);
+  expect(offEvent).toHaveBeenCalledWith("contentSafeAreaChanged", callback);
 });
