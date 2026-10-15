@@ -156,7 +156,7 @@ test("потерянный после commit ответ повторяется �
   });
 
   await page.goto(baseURL!);
-  await page.getByRole("button", { name: "Начать" }).click();
+  await page.getByRole("button", { name: "Начать повторение" }).click();
   await page.getByRole("button", { name: "Показать перевод" }).click();
   await page.getByRole("button", { name: "Вспомнил", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Оценка не отправлена");
@@ -180,6 +180,7 @@ test("карточка, оценки и ошибка помещаются на �
     }
     if (url.pathname === "/api/groups") return route.fulfill({ json: [] });
     if (url.pathname === "/api/learning/summary") return route.fulfill({ json: { due_count: 1, new_count: 0, can_start: true } });
+    if (url.pathname === "/api/cards") return route.fulfill({ json: [{ id: "11111111-1111-4111-8111-111111111111", front: "A deliberately long phrase", back: "Намеренно длинная фраза", visibility: "personal", group_id: null, version: 1, can_edit: true, can_delete: true }] });
     if (url.pathname === "/api/learning/next") return route.fulfill({ json: { card_id: "11111111-1111-4111-8111-111111111111", direction: "en_ru", question: "A deliberately long phrase that must wrap without horizontal overflow on a narrow mobile screen", answer: "Намеренно длинная фраза, которая должна переноситься без горизонтального переполнения", content_version: 1, state_version: 0 } });
     if (url.pathname === "/api/learning/reviews") {
       reviewFailed = true;
@@ -188,7 +189,7 @@ test("карточка, оценки и ошибка помещаются на �
     return route.fulfill({ status: 404, json: { error: { code: "NOT_FOUND", message: "Нет", details: {} } } });
   });
   await page.goto(baseURL!);
-  await page.getByRole("button", { name: "Начать" }).click();
+  await page.getByRole("button", { name: "Начать повторение" }).click();
   await expect(page.locator(".flash-card")).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("card-closed-320.png"), fullPage: true });
   await page.getByRole("button", { name: "Показать перевод" }).click();
@@ -230,11 +231,12 @@ test.describe("темы и ширины", () => {
         if (path === "/api/auth/telegram") return route.fulfill({ json: { access_token: "theme", token_type: "bearer", expires_in: 3600, user: { user_id: "u", telegram_id: 1, display_name: name } } });
         if (path === "/api/groups") return route.fulfill({ json: [] });
         if (path === "/api/learning/summary") return route.fulfill({ json: { due_count: 0, new_count: 1, can_start: true } });
+        if (path === "/api/cards") return route.fulfill({ json: [{ id: "11111111-1111-4111-8111-111111111111", front: "Testimony", back: "свидетельство", visibility: "personal", group_id: null, version: 1, can_edit: true, can_delete: true }] });
         if (path === "/api/learning/next") return route.fulfill({ json: { card_id: "11111111-1111-4111-8111-111111111111", direction: "ru_en", question: "свидетельство", answer: "Testimony", content_version: 1, state_version: 0 } });
         return route.fulfill({ status: 204 });
       });
       await page.goto(baseURL!);
-      await page.getByRole("button", { name: "Начать" }).click();
+      await page.getByRole("button", { name: "Начать повторение" }).click();
       await page.locator(".flash-card").click();
       await page.screenshot({ path: testInfo.outputPath(`${name}.png`), fullPage: true, animations: "disabled" });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();

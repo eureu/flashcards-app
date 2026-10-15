@@ -106,7 +106,7 @@ it("clears the active group in the parent after leaving it", async () => {
 
   render(<GroupPage activeGroupId={memberGroup.id} onSelect={onSelect} />);
   fireEvent.click(await screen.findByRole("button", { name: "Выйти из группы" }));
-  fireEvent.click(screen.getByRole("button", { name: "Выйти", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: /^Выйти$/ }));
 
   await waitFor(() => expect(onSelect).toHaveBeenCalledWith(null));
   expect(localStorage.getItem("active-group-id")).toBeNull();

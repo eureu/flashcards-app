@@ -8,12 +8,13 @@ import { ImportPage } from "../imports/ImportPage";
 
 interface WordListPageProps {
   groupId?: string;
+  groupName?: string;
   canAddShared: boolean;
 }
 
 type CardFilter = "all" | "shared" | "personal";
 
-export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
+export function WordListPage({ groupId, groupName, canAddShared }: WordListPageProps) {
   const [cards, setCards] = useState<CardView[]>([]);
   const [filter, setFilter] = useState<CardFilter>("all");
   const [queryInput, setQueryInput] = useState("");
@@ -108,7 +109,7 @@ export function WordListPage({ groupId, canAddShared }: WordListPageProps) {
       {importing && (
         <div className="work-panel">
           <button className="panel-close" onClick={() => setImporting(false)} type="button">Закрыть импорт</button>
-          <ImportPage groupId={groupId} canAddShared={canAddShared} />
+          <ImportPage groupId={groupId} groupName={groupName} canAddShared={canAddShared} />
         </div>
       )}
 

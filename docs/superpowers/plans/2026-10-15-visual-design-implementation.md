@@ -150,9 +150,9 @@
 - Produces: acceptance coverage for widths 320/390/480 and light/dark themes, plus final approved spec status.
 - Consumes: all UI contracts from Tasks 1–5 and existing Docker-backed Playwright setup.
 
-- [ ] **Step 1: Write failing browser assertions** for all seven screen states, no horizontal overflow, visible primary actions, long-card wrapping, and both theme token sets.
-- [ ] **Step 2: Run the visual browser test to verify RED** with `npm run test:e2e -- visual-design.spec.ts` against the documented test stack.
-- [ ] **Step 3: Apply the smallest responsive CSS and selector updates** needed for acceptance; update the visual spec status to implemented.
-- [ ] **Step 4: Run the complete verification set**: `npm test -- --run`, `npm run build`, and `npm run test:e2e`.
-- [ ] **Step 5: Commit** `test: verify forest interface across app`.
+- [x] **Step 1: Write failing browser assertions** for all seven screen states, no horizontal overflow, visible primary actions, long-card wrapping, and both theme token sets.
+- [x] **Step 2: Run the visual browser test to verify RED** with `npm run test:e2e -- visual-design.spec.ts` against the documented test stack.
+- [x] **Step 3: Apply the smallest responsive CSS and selector updates** needed for acceptance; update the visual spec status to implemented.
+- [x] **Step 4: Run the complete verification set**: `npm test -- --run`, `npm run build`, and `npm run test:e2e`.
+- [x] **Step 5: Commit** `test: verify forest interface across app`.
 

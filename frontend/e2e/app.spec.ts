@@ -25,7 +25,7 @@ test("общий словарь, личная карточка, права и н
   await publisher.setViewportSize({ width: 390, height: 844 });
   await installTelegram(publisher, PUBLISHER_ID, "Издатель");
   await publisher.goto(baseURL!);
-  await expect(publisher.getByText("Издатель")).toBeVisible();
+  await expect(publisher.getByLabel("Пользователь Издатель")).toBeVisible();
   await publisher.getByRole("button", { name: "Группы" }).click();
   await publisher.getByLabel("Название новой группы").fill(`Друзья ${suffix}`);
   await publisher.getByRole("button", { name: "Создать группу" }).click();
@@ -34,8 +34,9 @@ test("общий словарь, личная карточка, права и н
   const inviteText = await publisher.getByText(/^Код приглашения:/).textContent();
   const invitation = inviteText!.replace("Код приглашения:", "").trim();
   await groupArticle.getByRole("button", { name: "Добавить общие слова" }).click();
-  await publisher.getByRole("button", { name: "Добавить списком" }).click();
-  await publisher.getByLabel("Куда добавить").selectOption("group");
+  await publisher.getByRole("button", { name: "Добавить слова" }).click();
+  await publisher.getByRole("button", { name: "Вставить список" }).click();
+  await publisher.getByRole("button", { name: "В группу" }).click();
   await publisher.getByLabel("Список слов").fill([
     "Purpose - цель",
     "Receive - получать/принимать",
@@ -63,6 +64,7 @@ test("общий словарь, личная карточка, права и н
   await expect(memberGroup.getByRole("button", { name: "Добавить общие слова" })).toHaveCount(0);
   await memberGroup.getByRole("button", { name: "Выбрать для занятий" }).click();
   await member.getByRole("button", { name: "Слова", exact: true }).click();
+  await member.getByRole("button", { name: "Добавить слова" }).click();
   await member.getByRole("button", { name: "Добавить слово", exact: true }).click();
   await member.getByLabel("Слово или фраза").fill(personalPhrase);
   await member.getByLabel("Перевод", { exact: true }).fill("Личная фраза");

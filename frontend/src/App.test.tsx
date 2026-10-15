@@ -54,5 +54,5 @@ it("connects home actions to the group and dictionary sections", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Учиться" }));
   fireEvent.click(await screen.findByRole("button", { name: "Добавить слова" }));
   expect(await screen.findByRole("heading", { name: "Слова" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Слова", exact: true })).toHaveAttribute("aria-current", "page");
+  expect(screen.getByRole("button", { name: /^Слова$/ })).toHaveAttribute("aria-current", "page");
 });

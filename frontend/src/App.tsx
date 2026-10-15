@@ -90,6 +90,7 @@ export function App() {
       {section === "words" && (
         <WordListPage
           groupId={activeGroup?.id}
+          groupName={activeGroup?.name}
           canAddShared={activeGroup?.can_add_shared ?? false}
         />
       )}
