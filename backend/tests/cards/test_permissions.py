@@ -93,6 +93,45 @@ def test_author_edits_own_and_owner_edits_any(client, auth_headers):
     assert owner_edit.json()["version"] == 3
 
 
+def test_second_publisher_creates_shared_card_and_owner_edits_it(client, auth_headers):
+    owner_headers = auth_headers(2000000001)
+    group = client.post(
+        "/api/groups", headers=owner_headers, json={"name": "Friends"}
+    ).json()
+    invitation = client.post(
+        f"/api/groups/{group['id']}/invitation", headers=owner_headers
+    ).json()
+    second_publisher_headers = auth_headers(735056285)
+
+    joined = client.post(
+        f"/api/invitations/{invitation['token']}/join",
+        headers=second_publisher_headers,
+    )
+    created = client.post(
+        "/api/cards",
+        headers=second_publisher_headers,
+        json=_shared_payload(group["id"]),
+    )
+
+    assert joined.status_code == 200
+    assert joined.json()["can_add_shared"] is True
+    assert created.status_code == 201
+
+    owner_edit = client.patch(
+        f"/api/cards/{created.json()['id']}",
+        headers=owner_headers,
+        json={
+            "front": "Purpose",
+            "back": "цель/назначение",
+            "expected_version": 1,
+        },
+    )
+
+    assert owner_edit.status_code == 200
+    assert owner_edit.json()["back"] == "цель/назначение"
+    assert owner_edit.json()["version"] == 2
+
+
 def test_only_owner_deletes_shared(client, auth_headers):
     group, owner_headers, publisher_headers, _ = create_group_with_publisher(client, auth_headers)
     card = create_shared(client, publisher_headers, group["id"])
