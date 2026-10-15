@@ -137,6 +137,10 @@ for (const [width, scheme] of [[320, "light"], [390, "light"], [480, "light"], [
     await expect(page.getByText("Готово")).toBeVisible();
     await expect(page.getByText("Повтор")).toBeVisible();
     await expect(page.getByText("Ошибка")).toBeVisible();
+    if (width === 390 && scheme === "dark") {
+      await expectTouchTarget(page.locator(".preview-row__top label").filter({ hasText: "Добавить строку 1" }));
+      await expectTouchTarget(page.locator(".duplicate-toggle"));
+    }
     await capture(page, testInfo, "05-preview", screenshots);
 
     await page.getByRole("button", { name: "Группы" }).click();
