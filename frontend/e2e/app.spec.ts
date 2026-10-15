@@ -34,7 +34,6 @@ test("общий словарь, личная карточка, права и н
   const inviteText = await publisher.getByText(/^Код приглашения:/).textContent();
   const invitation = inviteText!.replace("Код приглашения:", "").trim();
   await groupArticle.getByRole("button", { name: "Добавить общие слова" }).click();
-  await publisher.getByRole("button", { name: "Добавить слова" }).click();
   await publisher.getByRole("button", { name: "Вставить список" }).click();
   await publisher.getByRole("button", { name: "В группу" }).click();
   await publisher.getByLabel("Список слов").fill([

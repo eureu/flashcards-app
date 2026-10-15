@@ -17,9 +17,9 @@ export function FlashCard({ question, answer, revealed, onReveal }: FlashCardPro
     <div
       className={`flash-card ${revealed ? "flash-card--revealed" : ""}`.trim()}
       data-testid="flash-card"
-      role="button"
-      tabIndex={0}
-      aria-label={revealed ? "Ответ показан" : "Показать ответ"}
+      role={revealed ? undefined : "button"}
+      tabIndex={revealed ? undefined : 0}
+      aria-label={revealed ? undefined : "Показать ответ"}
       onClick={() => !revealed && onReveal()}
       onKeyDown={keyDown}
     >

@@ -73,6 +73,20 @@ it("renders hostile-looking card content as plain text", async () => {
   expect(container.querySelector("img")).toBeNull();
 });
 
+it("opens a read-only card when the user cannot edit it", async () => {
+  api.listCards.mockResolvedValue([{ ...sharedCard, can_edit: false, can_delete: false }]);
+  render(<WordListPage groupId={sharedCard.group_id} canAddShared={false} />);
+
+  fireEvent.click(await screen.findByRole("button", { name: "Открыть карточку Purpose" }));
+
+  expect(screen.getByRole("heading", { name: "Просмотр пары" })).toBeInTheDocument();
+  expect(screen.getByLabelText("Слово или фраза")).toHaveAttribute("readonly");
+  expect(screen.getByLabelText("Перевод")).toHaveAttribute("readonly");
+  expect(screen.queryByRole("button", { name: "Сохранить" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Закрыть" }));
+  expect(screen.getByText("Purpose")).toBeInTheDocument();
+});
+
 it("labels shared and personal cards and names ownership in delete confirmation", async () => {
   const personalCard = {
     ...sharedCard,
@@ -92,6 +106,19 @@ it("labels shared and personal cards and names ownership in delete confirmation"
   expect(screen.getByRole("dialog")).toHaveTextContent("Удалить личную карточку «Grace — благодать»?");
   fireEvent.click(screen.getByRole("button", { name: "Отмена" }));
   expect(api.deleteCard).not.toHaveBeenCalled();
+});
+
+it("keeps a delete failure visible inside the confirmation dialog", async () => {
+  const personalCard = { ...sharedCard, visibility: "personal" as const, group_id: null, can_delete: true };
+  api.listCards.mockResolvedValue([personalCard]);
+  api.deleteCard.mockRejectedValue(new TypeError("network"));
+  render(<WordListPage canAddShared={false} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Удалить Purpose" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Удалить$/ }));
+
+  const dialog = screen.getByRole("dialog", { name: "Удалить карточку" });
+  expect(dialog).toContainElement(await screen.findByRole("alert"));
+  expect(screen.getByRole("button", { name: /^Удалить$/ })).toBeEnabled();
 });
 
 it("uses compact filter tabs and can clear a submitted search", async () => {

@@ -10,6 +10,7 @@ interface CardEditorProps {
   card?: CardView;
   groupId?: string;
   canAddShared: boolean;
+  readOnly?: boolean;
   onSaved: () => void | Promise<void>;
   onCancel: () => void;
 }
@@ -18,6 +19,7 @@ export function CardEditor({
   card,
   groupId,
   canAddShared,
+  readOnly = false,
   onSaved,
   onCancel,
 }: CardEditorProps) {
@@ -31,6 +33,7 @@ export function CardEditor({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (readOnly) return;
     setError(null);
     setSaving(true);
     try {
@@ -81,7 +84,7 @@ export function CardEditor({
 
   return (
     <form className="card-editor" onSubmit={submit}>
-      <header><p className="eyebrow">Карточка</p><h2>{card ? "Изменить пару" : "Новая пара"}</h2></header>
+      <header><p className="eyebrow">Карточка</p><h2>{readOnly ? "Просмотр пары" : card ? "Изменить пару" : "Новая пара"}</h2></header>
       {!card && (
         <label>
           Куда добавить
@@ -100,6 +103,7 @@ export function CardEditor({
           value={front}
           maxLength={2000}
           required
+          readOnly={readOnly}
           onChange={(event) => setFront(event.target.value)}
         />
       </label>
@@ -109,6 +113,7 @@ export function CardEditor({
           value={back}
           maxLength={2000}
           required
+          readOnly={readOnly}
           onChange={(event) => setBack(event.target.value)}
         />
       </label>
@@ -121,10 +126,12 @@ export function CardEditor({
           Загрузить актуальную версию
         </button>
       )}
-      <button className="button" type="submit" disabled={saving || !front.trim() || !back.trim()}>
-        {saving ? "Сохраняем…" : "Сохранить"}
-      </button>
-      <button className="secondary-button" type="button" onClick={onCancel}>Отмена</button>
+      {!readOnly && (
+        <button className="button" type="submit" disabled={saving || !front.trim() || !back.trim()}>
+          {saving ? "Сохраняем…" : "Сохранить"}
+        </button>
+      )}
+      <button className="secondary-button" type="button" onClick={onCancel}>{readOnly ? "Закрыть" : "Отмена"}</button>
     </form>
   );
 }

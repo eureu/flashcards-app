@@ -112,6 +112,20 @@ it("clears the active group in the parent after leaving it", async () => {
   expect(localStorage.getItem("active-group-id")).toBeNull();
 });
 
+it("keeps a leave failure visible inside the confirmation dialog", async () => {
+  const memberGroup = { ...ownerGroup, is_owner: false };
+  api.listGroups.mockResolvedValue([memberGroup]);
+  api.leaveGroup.mockRejectedValue(new TypeError("network"));
+
+  render(<GroupPage activeGroupId={memberGroup.id} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Выйти из группы" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Выйти$/ }));
+
+  const dialog = screen.getByRole("dialog", { name: "Выйти из группы" });
+  expect(dialog).toContainElement(await screen.findByRole("alert"));
+  expect(screen.getByRole("button", { name: /^Выйти$/ })).toBeEnabled();
+});
+
 it("previews and joins a group from Telegram start_param", async () => {
   api.previewInvitation.mockResolvedValue({ group_name: "Friends" });
   api.joinGroup.mockResolvedValue(ownerGroup);

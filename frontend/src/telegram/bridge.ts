@@ -6,6 +6,8 @@ interface TelegramWebApp {
   themeParams?: TelegramThemeParams;
   safeAreaInset?: { top?: number; right?: number; bottom?: number; left?: number };
   contentSafeAreaInset?: { top?: number; right?: number; bottom?: number; left?: number };
+  viewportHeight?: number;
+  viewportStableHeight?: number;
   onEvent?(event: string, callback: () => void): void;
   offEvent?(event: string, callback: () => void): void;
   BackButton?: {
@@ -29,6 +31,8 @@ export interface TelegramTheme {
   colorScheme?: "light" | "dark";
   themeParams?: TelegramThemeParams;
   safeAreaInset?: { top?: number; right?: number; bottom?: number; left?: number };
+  viewportHeight?: number;
+  viewportStableHeight?: number;
 }
 
 declare global {
@@ -49,17 +53,17 @@ export function requireTelegramInitData(): string {
 
 const FALLBACK = {
   light: {
-    background: "#F9FAF6", surface: "#FFFFFF", text: "#223B31", muted: "#68736B",
+    background: "#F9FAF6", surface: "#FFFFFF", text: "#223B31", muted: "#5F6A62",
     border: "#E0E6DD", subtle: "#EEF1EA", accent: "#214E40", accentText: "#FFFFFF",
     highlight: "#D7F39E", highlightText: "#253C1C", selected: "#E5EEDF",
-    again: "#A13A36", againSurface: "#FBEBE7", hard: "#855316", hardSurface: "#FBF0D9",
+    again: "#A13A36", againSurface: "#FBEBE7", dangerText: "#FFFFFF", hard: "#855316", hardSurface: "#FBF0D9",
     good: "#285C96", goodSurface: "#E9F1FB", easy: "#256447", easySurface: "#E7F2E7",
   },
   dark: {
     background: "#17241F", surface: "#203229", text: "#EEF3E8", muted: "#AFBEAD",
     border: "#37483B", subtle: "#26372C", accent: "#CCE9AA", accentText: "#213B2D",
     highlight: "#D7F39E", highlightText: "#253C1C", selected: "#31452C",
-    again: "#FFB7AA", againSurface: "#452D29", hard: "#EFCD94", hardSurface: "#413824",
+    again: "#FFB7AA", againSurface: "#452D29", dangerText: "#452D29", hard: "#EFCD94", hardSurface: "#413824",
     good: "#B0D1FA", goodSurface: "#283B50", easy: "#B9E3AC", easySurface: "#2D422F",
   },
 };
@@ -91,41 +95,38 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
   const scheme = theme.colorScheme === "dark" ? "dark" : "light";
   const fallback = FALLBACK[scheme];
   const params = theme.themeParams ?? {};
-  let background = params.bg_color ?? fallback.background;
-  let surface = params.secondary_bg_color ?? fallback.surface;
-  const proposedText = params.text_color ?? fallback.text;
-  let text = proposedText;
-  if (!sufficient(text, background) || !sufficient(text, surface)) {
-    background = fallback.background;
-    surface = fallback.surface;
-    text = fallback.text;
-  }
-  let accent = params.button_color ?? fallback.accent;
-  let accentText = params.button_text_color ?? fallback.accentText;
-  if (!sufficient(accentText, accent)) {
-    accent = fallback.accent;
-    accentText = fallback.accentText;
-  }
-  const proposedMuted = params.hint_color ?? fallback.muted;
-  const muted = sufficient(proposedMuted, background) && sufficient(proposedMuted, surface)
-    ? proposedMuted
-    : text;
+  const candidate = {
+    background: params.bg_color ?? fallback.background,
+    surface: params.secondary_bg_color ?? fallback.surface,
+    text: params.text_color ?? fallback.text,
+    muted: params.hint_color ?? fallback.muted,
+    accent: params.button_color ?? fallback.accent,
+    accentText: params.button_text_color ?? fallback.accentText,
+  };
+  const contentSurfaces = [candidate.background, candidate.surface, fallback.subtle, fallback.selected];
+  const candidateIsAccessible =
+    contentSurfaces.every((surface) => sufficient(candidate.text, surface)) &&
+    contentSurfaces.every((surface) => sufficient(candidate.muted, surface)) &&
+    [candidate.background, candidate.surface].every((surface) => sufficient(candidate.accent, surface)) &&
+    sufficient(candidate.accentText, candidate.accent);
+  const palette = candidateIsAccessible ? candidate : fallback;
   const root = document.documentElement.style;
   document.documentElement.dataset.theme = scheme;
   root.setProperty("color-scheme", scheme);
-  root.setProperty("--color-background", background);
-  root.setProperty("--color-surface", surface);
-  root.setProperty("--color-text", text);
-  root.setProperty("--color-muted", muted);
+  root.setProperty("--color-background", palette.background);
+  root.setProperty("--color-surface", palette.surface);
+  root.setProperty("--color-text", palette.text);
+  root.setProperty("--color-muted", palette.muted);
   root.setProperty("--color-border", fallback.border);
   root.setProperty("--color-subtle", fallback.subtle);
-  root.setProperty("--color-accent", accent);
-  root.setProperty("--color-accent-text", accentText);
+  root.setProperty("--color-accent", palette.accent);
+  root.setProperty("--color-accent-text", palette.accentText);
   root.setProperty("--color-highlight", fallback.highlight);
   root.setProperty("--color-highlight-text", fallback.highlightText);
   root.setProperty("--color-selected", fallback.selected);
   root.setProperty("--color-again", fallback.again);
   root.setProperty("--color-again-surface", fallback.againSurface);
+  root.setProperty("--color-danger-text", fallback.dangerText);
   root.setProperty("--color-hard", fallback.hard);
   root.setProperty("--color-hard-surface", fallback.hardSurface);
   root.setProperty("--color-good", fallback.good);
@@ -136,6 +137,10 @@ export function applyTelegramTheme(theme: TelegramTheme): void {
   root.setProperty("--safe-right", `${theme.safeAreaInset?.right ?? 0}px`);
   root.setProperty("--safe-bottom", `${theme.safeAreaInset?.bottom ?? 0}px`);
   root.setProperty("--safe-left", `${theme.safeAreaInset?.left ?? 0}px`);
+  if (Number.isFinite(theme.viewportHeight) && (theme.viewportHeight ?? 0) > 0) root.setProperty("--viewport-height", `${theme.viewportHeight}px`);
+  else root.removeProperty("--viewport-height");
+  if (Number.isFinite(theme.viewportStableHeight) && (theme.viewportStableHeight ?? 0) > 0) root.setProperty("--viewport-stable-height", `${theme.viewportStableHeight}px`);
+  else root.removeProperty("--viewport-stable-height");
 }
 
 export function subscribeTelegramLayout(onChange: () => void): () => void {

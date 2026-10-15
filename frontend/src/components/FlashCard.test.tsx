@@ -6,6 +6,8 @@ it("shows only the two text sides after reveal", () => {
   render(<FlashCard question="Purpose" answer="цель" revealed={true} onReveal={vi.fn()} />);
   const card = screen.getByTestId("flash-card");
   expect(card.textContent).toBe("Purposeцель");
+  expect(card).not.toHaveAttribute("role");
+  expect(card).not.toHaveAttribute("tabindex");
   expect(within(card).queryByRole("button", { name: "Легко" })).toBeNull();
   expect(within(card).queryByText("английский → русский")).toBeNull();
 });

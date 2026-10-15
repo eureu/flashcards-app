@@ -51,7 +51,7 @@ export async function installTelegram(
               bg_color: "#F9FAF6",
               secondary_bg_color: "#FFFFFF",
               text_color: "#223B31",
-              hint_color: "#68736B",
+              hint_color: "#5F6A62",
               button_color: "#214E40",
               button_text_color: "#FFFFFF",
             },

@@ -104,6 +104,22 @@ it("reuses the operation key after a network failure", async () => {
   expect(await screen.findByText("Добавлено карточек: 1")).toBeInTheDocument();
 });
 
+it("clears a stale retry when the source text changes", async () => {
+  api.previewImport.mockResolvedValue(validPreview);
+  api.commitImport.mockRejectedValueOnce(new TypeError("network"));
+  render(<ImportPage canAddShared={false} />);
+  const source = screen.getByLabelText("Список слов");
+  fireEvent.change(source, { target: { value: "Purpose - цель" } });
+  fireEvent.click(screen.getByRole("button", { name: "Проверить список" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Добавить 1" }));
+  expect(await screen.findByRole("button", { name: "Повторить" })).toBeInTheDocument();
+
+  fireEvent.change(source, { target: { value: "Purpose - назначение" } });
+
+  expect(screen.queryByRole("button", { name: "Повторить" })).toBeNull();
+  expect(screen.queryByText("Не удалось добавить карточки")).toBeNull();
+});
+
 it("refreshes preview instead of retrying a stale confirmation", async () => {
   const changedPreview = {
     ...validPreview,

@@ -10,11 +10,13 @@ interface WordListPageProps {
   groupId?: string;
   groupName?: string;
   canAddShared: boolean;
+  openAddWords?: boolean;
+  onAddWordsOpened?: () => void;
 }
 
 type CardFilter = "all" | "shared" | "personal";
 
-export function WordListPage({ groupId, groupName, canAddShared }: WordListPageProps) {
+export function WordListPage({ groupId, groupName, canAddShared, openAddWords = false, onAddWordsOpened }: WordListPageProps) {
   const [cards, setCards] = useState<CardView[]>([]);
   const [filter, setFilter] = useState<CardFilter>("all");
   const [queryInput, setQueryInput] = useState("");
@@ -23,6 +25,8 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
   const [importing, setImporting] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [deleting, setDeleting] = useState<CardView | null>(null);
+  const [deletePending, setDeletePending] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const addButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -36,6 +40,12 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
     refresh().catch(() => setError("Не удалось загрузить словарь"));
   }, [refresh]);
 
+  useEffect(() => {
+    if (!openAddWords) return;
+    setAddOpen(true);
+    onAddWordsOpened?.();
+  }, [onAddWordsOpened, openAddWords]);
+
   function search(event: FormEvent) {
     event.preventDefault();
     setQuery(queryInput.trim());
@@ -48,13 +58,22 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
 
   async function confirmRemove() {
     if (!deleting) return;
+    setDeletePending(true);
+    setDeleteError(null);
     try {
       await deleteCard(deleting.id, deleting.version);
       setDeleting(null);
       await refresh();
     } catch {
-      setError("Не удалось удалить карточку");
+      setDeleteError("Не удалось удалить карточку");
+    } finally {
+      setDeletePending(false);
     }
+  }
+
+  function askToRemove(card: CardView) {
+    setDeleteError(null);
+    setDeleting(card);
   }
 
   async function saved() {
@@ -119,6 +138,7 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
             card={editing === "new" ? undefined : editing}
             groupId={groupId}
             canAddShared={canAddShared}
+            readOnly={editing !== "new" && !editing.can_edit}
             onSaved={saved}
             onCancel={() => setEditing(null)}
           />
@@ -136,10 +156,10 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
         <ul className="word-list">
           {cards.map((card) => (
             <li className="word-row" key={card.id}>
-              <div className="word-row__copy">
+              <button className="word-row__copy" type="button" aria-label={`Открыть карточку ${card.front}`} onClick={() => setEditing(card)}>
                 <strong>{card.front}</strong>
                 <span>{card.back}</span>
-              </div>
+              </button>
               <div className="word-row__scope">
                 <span className="scope-label"><Icon name={card.visibility === "group" ? "groups" : "lock"} size={13} />{card.visibility === "group" ? "Общая" : "Личная"}</span>
                 <div className="word-row__actions">
@@ -147,7 +167,7 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
                     <button type="button" aria-label={`Изменить ${card.front}`} onClick={() => setEditing(card)}><Icon name="edit" size={17} /></button>
                   )}
                   {card.can_delete && (
-                    <button type="button" aria-label={`Удалить ${card.front}`} onClick={() => setDeleting(card)}><Icon name="trash" size={17} /></button>
+                    <button type="button" aria-label={`Удалить ${card.front}`} onClick={() => askToRemove(card)}><Icon name="trash" size={17} /></button>
                   )}
                 </div>
               </div>
@@ -162,7 +182,7 @@ export function WordListPage({ groupId, groupName, canAddShared }: WordListPageP
       </ActionSheet>
 
       {deleting && (
-        <ConfirmDialog onCancel={() => setDeleting(null)} onConfirm={() => void confirmRemove()}>
+        <ConfirmDialog title="Удалить карточку" error={deleteError} pending={deletePending} pendingLabel="Удаляем…" onCancel={() => setDeleting(null)} onConfirm={() => void confirmRemove()}>
           <h2>Удалить карточку?</h2>
           <p>Удалить {deleting.visibility === "group" ? "общую" : "личную"} карточку «{deleting.front} — {deleting.back}»?</p>
         </ConfirmDialog>

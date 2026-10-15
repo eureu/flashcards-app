@@ -21,6 +21,7 @@ export function App() {
   const [reviewing, setReviewing] = useState(false);
   const [activeGroup, setActiveGroup] = useState<GroupView | null>(null);
   const [startParam, setStartParam] = useState<string | null>(null);
+  const [openWordsAdd, setOpenWordsAdd] = useState(false);
 
   useEffect(() => {
     const telegram = getTelegramWebApp();
@@ -32,6 +33,8 @@ export function App() {
       colorScheme: telegram.colorScheme,
       themeParams: telegram.themeParams,
       safeAreaInset: telegram.contentSafeAreaInset ?? telegram.safeAreaInset,
+      viewportHeight: telegram.viewportHeight,
+      viewportStableHeight: telegram.viewportStableHeight,
     });
     syncTheme();
     const unsubscribe = subscribeTelegramLayout(syncTheme);
@@ -52,9 +55,15 @@ export function App() {
     return unsubscribe;
   }, []);
 
-  function leaveReview(nextSection?: AppSection) {
+  function openWords(add = false) {
+    setOpenWordsAdd(add);
+    setSection("words");
+  }
+
+  function leaveReview(nextSection?: AppSection, add = false) {
     setReviewing(false);
-    if (nextSection) setSection(nextSection);
+    if (nextSection === "words") openWords(add);
+    else if (nextSection) setSection(nextSection);
     void listGroups().then((groups) => {
       if (activeGroup && !groups.some((group) => group.id === activeGroup.id)) {
         localStorage.removeItem("active-group-id");
@@ -68,7 +77,7 @@ export function App() {
     return (
       <ReviewPage
         groupId={activeGroup?.id}
-        onAddWords={() => leaveReview("words")}
+        onAddWords={() => leaveReview("words", true)}
         onExit={() => leaveReview()}
         onOpenWords={() => leaveReview("words")}
       />
@@ -82,7 +91,7 @@ export function App() {
           displayName={actor.display_name}
           groupId={activeGroup?.id}
           groupName={activeGroup?.name}
-          onAddWords={() => setSection("words")}
+          onAddWords={() => openWords(true)}
           onChooseGroup={() => setSection("groups")}
           onStart={() => setReviewing(true)}
         />
@@ -92,6 +101,8 @@ export function App() {
           groupId={activeGroup?.id}
           groupName={activeGroup?.name}
           canAddShared={activeGroup?.can_add_shared ?? false}
+          openAddWords={openWordsAdd}
+          onAddWordsOpened={() => setOpenWordsAdd(false)}
         />
       )}
       {section === "groups" && (
@@ -99,10 +110,10 @@ export function App() {
           activeGroupId={activeGroup?.id}
           initialInviteToken={startParam}
           onSelect={setActiveGroup}
-          onAddShared={() => setSection("words")}
+          onAddShared={() => openWords(true)}
         />
       )}
-      <Tabs active={section} onChange={setSection} />
+      <Tabs active={section} onChange={(next) => { setOpenWordsAdd(false); setSection(next); }} />
     </main>
   );
 }

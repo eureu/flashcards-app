@@ -113,6 +113,8 @@ export function ImportPage({ groupId, groupName, canAddShared }: ImportPageProps
             setText(event.target.value);
             setPreview(null);
             setOperationKey(null);
+            setRetry(false);
+            setMessage(null);
           }}
           rows={9}
         />

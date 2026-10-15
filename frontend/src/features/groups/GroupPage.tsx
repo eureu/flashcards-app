@@ -30,6 +30,8 @@ export function GroupPage({ activeGroupId, initialInviteToken, onSelect, onAddSh
   const [createdInvitation, setCreatedInvitation] = useState<{ token: string; url: string | null } | null>(null);
   const [invitedGroupName, setInvitedGroupName] = useState<string | null>(null);
   const [leaving, setLeaving] = useState<GroupView | null>(null);
+  const [leavePending, setLeavePending] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,6 +85,8 @@ export function GroupPage({ activeGroupId, initialInviteToken, onSelect, onAddSh
   async function confirmLeave() {
     if (!leaving) return;
     setError(null);
+    setLeaveError(null);
+    setLeavePending(true);
     try {
       await leaveGroup(leaving.id);
       if (localStorage.getItem(ACTIVE_GROUP_KEY) === leaving.id) {
@@ -91,7 +95,13 @@ export function GroupPage({ activeGroupId, initialInviteToken, onSelect, onAddSh
       }
       setLeaving(null);
       await refresh();
-    } catch { setError("Не удалось выйти из группы"); }
+    } catch { setLeaveError("Не удалось выйти из группы"); }
+    finally { setLeavePending(false); }
+  }
+
+  function askToLeave(group: GroupView) {
+    setLeaveError(null);
+    setLeaving(group);
   }
 
   function selectGroup(group: GroupView | null) {
@@ -143,7 +153,7 @@ export function GroupPage({ activeGroupId, initialInviteToken, onSelect, onAddSh
               {group.can_add_shared && <button className="button" type="button" onClick={() => { selectGroup(group); onAddShared?.(); }}>Добавить общие слова</button>}
               {group.is_owner
                 ? <button className="text-button" type="button" onClick={() => void handleInvitation(group.id)}>Создать приглашение</button>
-                : <button className="text-button text-button--danger" type="button" onClick={() => setLeaving(group)}>Выйти из группы</button>}
+                : <button className="text-button text-button--danger" type="button" onClick={() => askToLeave(group)}>Выйти из группы</button>}
             </div>
           </article>
         ))}
@@ -170,7 +180,7 @@ export function GroupPage({ activeGroupId, initialInviteToken, onSelect, onAddSh
       </section>
 
       {leaving && (
-        <ConfirmDialog confirmLabel="Выйти" onCancel={() => setLeaving(null)} onConfirm={() => void confirmLeave()}>
+        <ConfirmDialog title="Выйти из группы" confirmLabel="Выйти" error={leaveError} pending={leavePending} pendingLabel="Выходим…" onCancel={() => setLeaving(null)} onConfirm={() => void confirmLeave()}>
           <h2>Выйти из группы?</h2>
           <p>Общие слова «{leaving.name}» исчезнут из вашего набора. Личные слова и ваш прогресс сохранятся.</p>
         </ConfirmDialog>

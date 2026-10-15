@@ -46,7 +46,7 @@ it("falls back as complete text and button pairs and applies safe area", () => {
   expect(style.getPropertyValue("--safe-bottom")).toBe("20px");
 });
 
-it("keeps muted text readable while rating pairs stay brand-controlled", () => {
+it("keeps the complete Forest palette when a partial Telegram palette is incompatible", () => {
   applyTelegramTheme({
     colorScheme: "light",
     themeParams: {
@@ -57,11 +57,41 @@ it("keeps muted text readable while rating pairs stay brand-controlled", () => {
   });
 
   const style = document.documentElement.style;
-  expect(style.getPropertyValue("--color-muted")).toBe("#000000");
+  expect(style.getPropertyValue("--color-background")).toBe("#F9FAF6");
+  expect(style.getPropertyValue("--color-muted")).toBe("#5F6A62");
   expect(style.getPropertyValue("--color-again")).toBe("#A13A36");
   expect(style.getPropertyValue("--color-hard")).toBe("#855316");
   expect(style.getPropertyValue("--color-good")).toBe("#285C96");
   expect(style.getPropertyValue("--color-easy")).toBe("#256447");
+});
+
+it("falls back atomically when Telegram text fails on a fixed semantic surface", () => {
+  applyTelegramTheme({
+    colorScheme: "light",
+    themeParams: {
+      bg_color: "#ffffff",
+      secondary_bg_color: "#ffffff",
+      text_color: "#657268",
+      hint_color: "#657268",
+      button_color: "#214E40",
+      button_text_color: "#FFFFFF",
+    },
+  });
+
+  const style = document.documentElement.style;
+  expect(style.getPropertyValue("--color-background")).toBe("#F9FAF6");
+  expect(style.getPropertyValue("--color-surface")).toBe("#FFFFFF");
+  expect(style.getPropertyValue("--color-text")).toBe("#223B31");
+  expect(style.getPropertyValue("--color-muted")).toBe("#5F6A62");
+});
+
+it("publishes Telegram viewport heights and an accessible danger pair", () => {
+  applyTelegramTheme({ colorScheme: "dark", viewportHeight: 612.5, viewportStableHeight: 700 });
+
+  const style = document.documentElement.style;
+  expect(style.getPropertyValue("--viewport-height")).toBe("612.5px");
+  expect(style.getPropertyValue("--viewport-stable-height")).toBe("700px");
+  expect(style.getPropertyValue("--color-danger-text")).toBe("#452D29");
 });
 
 it("unsubscribes layout listeners", () => {

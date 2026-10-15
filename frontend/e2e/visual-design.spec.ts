@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { installTelegram } from "./telegram";
 
 const GROUP_ID = "10000000-0000-4000-8000-000000000001";
@@ -11,6 +11,13 @@ async function expectNoHorizontalOverflow(page: Page) {
 async function capture(page: Page, testInfo: TestInfo, state: string, enabled: boolean) {
   await expectNoHorizontalOverflow(page);
   if (enabled) await page.screenshot({ path: testInfo.outputPath(`${state}.png`), fullPage: true, animations: "disabled" });
+}
+
+async function expectTouchTarget(locator: Locator) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
 }
 
 for (const [width, scheme] of [[320, "light"], [390, "light"], [480, "light"], [320, "dark"], [390, "dark"], [480, "dark"]] as const) {
@@ -92,9 +99,37 @@ for (const [width, scheme] of [[320, "light"], [390, "light"], [480, "light"], [
     await expect(page.getByText("Purpose", { exact: true })).toBeVisible();
     await capture(page, testInfo, "03-dictionary", screenshots);
 
+    if (width === 390 && scheme === "dark") {
+      await page.getByLabel("Поиск по словам и переводам").fill("Purpose");
+      await expectTouchTarget(page.getByRole("button", { name: "Очистить поиск" }));
+      await page.getByRole("button", { name: "Очистить поиск" }).click();
+      for (const name of ["Все", "Общие", "Личные"]) await expectTouchTarget(page.getByRole("button", { name, exact: true }));
+      await expectTouchTarget(page.getByRole("button", { name: "Изменить Purpose" }));
+      await expectTouchTarget(page.getByRole("button", { name: "Удалить High priest" }));
+      await page.getByRole("button", { name: "Удалить High priest" }).click();
+      const dangerContrast = await page.locator(".button--danger").evaluate((element) => {
+        const channels = (value: string) => value.match(/\d+/g)!.slice(0, 3).map(Number);
+        const luminance = (value: string) => channels(value).map((channel) => {
+          const normalized = channel / 255;
+          return normalized <= 0.03928 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+        }).reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0);
+        const style = getComputedStyle(element);
+        const foreground = luminance(style.color);
+        const background = luminance(style.backgroundColor);
+        return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+      });
+      expect(dangerContrast).toBeGreaterThanOrEqual(4.5);
+      await page.getByRole("button", { name: "Отмена" }).click();
+    }
+
     await page.getByRole("button", { name: "Добавить слова" }).click();
     await page.getByRole("button", { name: "Вставить список" }).click();
     await expect(page.getByRole("heading", { name: "Добавить списком" })).toBeVisible();
+    if (width === 390 && scheme === "dark") {
+      await expectTouchTarget(page.getByRole("button", { name: "Закрыть импорт" }));
+      await expectTouchTarget(page.getByRole("button", { name: "Только мне" }));
+      await expectTouchTarget(page.getByRole("button", { name: "В группу" }));
+    }
     await capture(page, testInfo, "04-import", screenshots);
 
     await page.getByLabel("Список слов").fill("Purpose - цель\nPurpose - цель\nбез разделителя");
@@ -107,6 +142,7 @@ for (const [width, scheme] of [[320, "light"], [390, "light"], [480, "light"], [
     await page.getByRole("button", { name: "Группы" }).click();
     await expect(page.getByRole("heading", { name: "Друзья" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Добавить общие слова" })).toBeVisible();
+    if (width === 390 && scheme === "dark") await expectTouchTarget(page.getByRole("button", { name: "Выйти из группы" }));
     await capture(page, testInfo, "06-group", screenshots);
   });
 }
